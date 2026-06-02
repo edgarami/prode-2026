@@ -1,1 +1,52 @@
-/* You can add global styles to this file, and also import other style files */
+/* Google Fonts - Inter */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ─── Reset & Base ─────────────────────────────────────── */
+body {
+  background-color: #0d1117;
+  color: #ffffff;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Animaciones ───────────────────────────────────────── */
+@keyframes livePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.8); }
+}
+
+.live-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #ef4444;
+  margin-right: 6px;
+  animation: livePulse 1.5s ease-in-out infinite;
+}
+
+/* ─── Scrollbar custom ──────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #0d1117; }
+::-webkit-scrollbar-thumb { background: #1f2940; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+
+/* ─── Score input ───────────────────────────────────────── */
+.score-input {
+  width: 56px;
+  height: 56px;
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: 700;
+  background-color: #1f2940;
+  border: 1px solid #1f2940;
+  color: #ffffff;
+  border-radius: 0.75rem;
+
+  &:focus {
+    outline: none;
+    border-color: #00FF66;
+    box-shadow: 0 0 0 2px rgba(0, 255, 102, 0.3);
+  }
+}

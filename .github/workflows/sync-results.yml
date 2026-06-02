@@ -1,0 +1,32 @@
+name: 🔄 Sincronizar Resultados Mundial 2026
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'   # cada 30 minutos
+  workflow_dispatch:          # ejecución manual desde GitHub
+
+jobs:
+  sync:
+    name: Sincronizar resultados y calcular puntos
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 🔄 Ejecutar sincronización
+        env:
+          FOOTBALL_API_KEY:    ${{ secrets.FOOTBALL_API_KEY }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_API_KEY:    ${{ secrets.FIREBASE_API_KEY }}
+        run: node scripts/sync-results.js
+
+      - name: 📊 Resumen
+        if: always()
+        run: echo "Completado en $(date -u '+%Y-%m-%d %H:%M:%S UTC')"

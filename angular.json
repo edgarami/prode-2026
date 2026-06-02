@@ -30,6 +30,7 @@
               }
             ],
             "styles": [
+              "src/tailwind.css",
               "src/styles.scss"
             ]
           },
@@ -64,7 +65,8 @@
               "buildTarget": "world-cup-predictor:build:production"
             },
             "development": {
-              "buildTarget": "world-cup-predictor:build:development"
+              "buildTarget": "world-cup-predictor:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"
