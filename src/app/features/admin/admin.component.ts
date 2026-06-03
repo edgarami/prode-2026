@@ -35,29 +35,29 @@ export class FinishedCountPipe implements PipeTransform {
 
       <!-- Acciones rápidas -->
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <div class="rounded-2xl p-5" style="background:#1a2130;border:1px solid #1f2940">
+        <div class="rounded-2xl p-5" style="background:#1E0E13;border:1px solid #2A1219">
           <h3 class="font-bold text-white mb-2 flex items-center gap-2"><span class="text-xl">🔄</span> Sincronizar desde API</h3>
           <p class="text-gray-400 text-xs mb-4">Importa todos los partidos desde football-data.org.</p>
           <button (click)="syncAll()" [disabled]="syncing()"
             class="w-full py-2.5 rounded-xl text-sm font-bold disabled:opacity-40"
-            style="background:#00FF66;color:#0d1117">
+            style="background:linear-gradient(135deg,#C9A843,#A8872E);color:#0E0608">
             {{ syncing() ? 'Sincronizando...' : 'Sincronizar partidos' }}
           </button>
-          <p *ngIf="syncMsg()" class="mt-2 text-xs" [style.color]="syncErr() ? '#f87171' : '#00FF66'">{{ syncMsg() }}</p>
+          <p *ngIf="syncMsg()" class="mt-2 text-xs" [style.color]="syncErr() ? '#f87171' : '#C9A843'">{{ syncMsg() }}</p>
         </div>
 
-        <div class="rounded-2xl p-5" style="background:#1a2130;border:1px solid #1f2940">
+        <div class="rounded-2xl p-5" style="background:#1E0E13;border:1px solid #2A1219">
           <h3 class="font-bold text-white mb-2 flex items-center gap-2"><span class="text-xl">🏆</span> Actualizar resultados</h3>
           <p class="text-gray-400 text-xs mb-4">Trae resultados finalizados y recalcula puntos.</p>
           <button (click)="syncFinished()" [disabled]="calculating()"
             class="w-full py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-40"
-            style="border:1px solid #1f2940">
+            style="border:1px solid #2A1219">
             {{ calculating() ? 'Procesando...' : 'Actualizar y calcular' }}
           </button>
-          <p *ngIf="calcMsg()" class="mt-2 text-xs" [style.color]="calcErr() ? '#f87171' : '#00FF66'">{{ calcMsg() }}</p>
+          <p *ngIf="calcMsg()" class="mt-2 text-xs" [style.color]="calcErr() ? '#f87171' : '#C9A843'">{{ calcMsg() }}</p>
         </div>
 
-        <div class="rounded-2xl p-5" style="background:#1a2130;border:1px solid #1f2940">
+        <div class="rounded-2xl p-5" style="background:#1E0E13;border:1px solid #2A1219">
           <h3 class="font-bold text-white mb-2 flex items-center gap-2"><span class="text-xl">📊</span> Estadísticas</h3>
           <div class="space-y-2">
             <div class="flex justify-between text-sm">
@@ -66,7 +66,7 @@ export class FinishedCountPipe implements PipeTransform {
             </div>
             <div class="flex justify-between text-sm">
               <span class="text-gray-400">Finalizados</span>
-              <span class="font-bold" style="color:#00FF66">{{ matches() | finishedCount }}</span>
+              <span class="font-bold" style="color:#C9A843">{{ matches() | finishedCount }}</span>
             </div>
             <div class="flex justify-between text-sm">
               <span class="text-gray-400">Pendientes</span>
@@ -82,14 +82,14 @@ export class FinishedCountPipe implements PipeTransform {
           <h2 class="text-lg font-black text-white">Gestión de Partidos</h2>
           <input type="text" placeholder="Filtrar..." [(ngModel)]="filter"
             class="w-48 rounded-xl px-3 py-2 text-white text-sm placeholder-gray-500 focus:outline-none"
-            style="background:#1f2940;border:1px solid #1f2940"/>
+            style="background:#2A1219;border:1px solid #2A1219"/>
         </div>
 
         <app-loading-spinner *ngIf="loadingMatches()"></app-loading-spinner>
 
         <div *ngIf="!loadingMatches()" class="space-y-3">
           <div *ngFor="let m of filteredMatches(); trackBy: trackId"
-            class="rounded-2xl p-4" style="background:#1a2130;border:1px solid #1f2940">
+            class="rounded-2xl p-4" style="background:#1E0E13;border:1px solid #2A1219">
             <div class="flex flex-col sm:flex-row sm:items-center gap-4">
               <div class="flex items-center gap-4 flex-1">
                 <app-team-flag [team]="m.homeTeam" size="sm"></app-team-flag>
@@ -110,10 +110,10 @@ export class FinishedCountPipe implements PipeTransform {
               </div>
 
               <span class="px-2.5 py-1 rounded-full text-xs font-semibold shrink-0"
-                [style.background]="m.status==='FINISHED' ? 'rgba(0,255,102,0.15)' :
+                [style.background]="m.status==='FINISHED' ? 'rgba(201,168,67,0.15)' :
                                     m.status==='IN_PLAY'   ? 'rgba(245,158,11,0.15)' :
                                     'rgba(59,130,246,0.15)'"
-                [style.color]="m.status==='FINISHED' ? '#00FF66' :
+                [style.color]="m.status==='FINISHED' ? '#C9A843' :
                                m.status==='IN_PLAY'   ? '#fbbf24' : '#60a5fa'">
                 {{ m.status }}
               </span>
@@ -121,13 +121,13 @@ export class FinishedCountPipe implements PipeTransform {
               <div class="flex gap-2 shrink-0">
                 <button *ngIf="m.status!=='FINISHED'" (click)="openResult(m)"
                   class="py-1.5 px-3 rounded-xl text-xs font-semibold text-gray-300 hover:text-white transition-colors"
-                  style="border:1px solid #1f2940">
+                  style="border:1px solid #2A1219">
                   ✏️ Resultado
                 </button>
                 <button *ngIf="m.status==='FINISHED'" (click)="recalc(m)"
                   [disabled]="recalcId()===m.id"
                   class="py-1.5 px-3 rounded-xl text-xs font-semibold disabled:opacity-40 transition-colors"
-                  style="color:#00FF66">
+                  style="color:#C9A843">
                   {{ recalcId()===m.id ? '...' : '🔄 Recalc' }}
                 </button>
               </div>
@@ -140,7 +140,7 @@ export class FinishedCountPipe implements PipeTransform {
     <!-- Modal resultado -->
     <div *ngIf="resultOpen()" class="fixed inset-0 z-50 flex items-center justify-center p-4" (click)="closeResult()">
       <div class="absolute inset-0" style="background:rgba(0,0,0,0.75)"></div>
-      <div class="relative w-full max-w-sm rounded-2xl p-6" style="background:#1a2130;border:1px solid #1f2940"
+      <div class="relative w-full max-w-sm rounded-2xl p-6" style="background:#1E0E13;border:1px solid #2A1219"
            (click)="$event.stopPropagation()">
         <h3 class="text-lg font-black text-white mb-1">Cargar resultado</h3>
         <p *ngIf="selMatch()" class="text-gray-400 text-sm mb-5">
@@ -166,11 +166,11 @@ export class FinishedCountPipe implements PipeTransform {
           <div class="flex gap-3">
             <button type="submit" [disabled]="savingResult()"
               class="flex-1 py-2.5 rounded-xl font-bold text-sm disabled:opacity-40"
-              style="background:#00FF66;color:#0d1117">
+              style="background:linear-gradient(135deg,#C9A843,#A8872E);color:#0E0608">
               {{ savingResult() ? 'Guardando...' : 'Confirmar' }}
             </button>
             <button type="button" (click)="closeResult()"
-              class="py-2.5 px-4 rounded-xl text-sm text-gray-400 hover:text-white" style="border:1px solid #1f2940">
+              class="py-2.5 px-4 rounded-xl text-sm text-gray-400 hover:text-white" style="border:1px solid #2A1219">
               Cancelar
             </button>
           </div>

@@ -13,20 +13,20 @@ import { CommonModule } from '@angular/common';
           <span class="text-2xl font-black text-white">{{ pad(t().days) }}</span>
           <span class="text-xs text-gray-400 uppercase">días</span>
         </div>
-        <span *ngIf="t().days > 0" class="text-2xl font-black" style="color:#00FF66">:</span>
+        <span *ngIf="t().days > 0" class="text-2xl font-black" style="color:#C9A843">:</span>
         <div class="flex flex-col items-center">
           <span class="text-2xl font-black text-white">{{ pad(t().hours) }}</span>
           <span class="text-xs text-gray-400 uppercase">hrs</span>
         </div>
-        <span class="text-2xl font-black" style="color:#00FF66">:</span>
+        <span class="text-2xl font-black" style="color:#C9A843">:</span>
         <div class="flex flex-col items-center">
           <span class="text-2xl font-black text-white">{{ pad(t().minutes) }}</span>
           <span class="text-xs text-gray-400 uppercase">min</span>
         </div>
         <ng-container *ngIf="t().days === 0">
-          <span class="text-2xl font-black" style="color:#00FF66">:</span>
+          <span class="text-2xl font-black" style="color:#C9A843">:</span>
           <div class="flex flex-col items-center">
-            <span class="text-2xl font-black" style="color:#00FF66">{{ pad(t().seconds) }}</span>
+            <span class="text-2xl font-black" style="color:#C9A843">{{ pad(t().seconds) }}</span>
             <span class="text-xs text-gray-400 uppercase">seg</span>
           </div>
         </ng-container>

@@ -1,52 +1,72 @@
-/* Google Fonts - Inter */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
-/* ─── Reset & Base ─────────────────────────────────────── */
+/* ─── Base ─────────────────────────────────────────────── */
 body {
-  background-color: #0d1117;
+  background-color: #0E0608;
   color: #ffffff;
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ─── Animaciones ───────────────────────────────────────── */
+/* ─── Scrollbar ─────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 6px; }
+::-webkit-scrollbar-track { background: #0E0608; }
+::-webkit-scrollbar-thumb { background: #3D0E1C; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #7B1F35; }
+
+/* ─── Live dot ──────────────────────────────────────────── */
 @keyframes livePulse {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.5; transform: scale(0.8); }
+  50%       { opacity: 0.4; transform: scale(0.75); }
 }
-
 .live-dot {
   display: inline-block;
-  width: 8px;
-  height: 8px;
+  width: 8px; height: 8px;
   border-radius: 50%;
-  background-color: #ef4444;
+  background: #ef4444;
   margin-right: 6px;
-  animation: livePulse 1.5s ease-in-out infinite;
+  animation: livePulse 1.4s ease-in-out infinite;
 }
-
-/* ─── Scrollbar custom ──────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #0d1117; }
-::-webkit-scrollbar-thumb { background: #1f2940; border-radius: 9999px; }
-::-webkit-scrollbar-thumb:hover { background: #6b7280; }
 
 /* ─── Score input ───────────────────────────────────────── */
 .score-input {
-  width: 56px;
-  height: 56px;
+  width: 56px; height: 56px;
   text-align: center;
-  font-size: 1.5rem;
-  font-weight: 700;
-  background-color: #1f2940;
-  border: 1px solid #1f2940;
-  color: #ffffff;
+  font-size: 1.5rem; font-weight: 700;
+  background: #2A1219;
+  border: 1px solid #3D0E1C;
+  color: #fff;
   border-radius: 0.75rem;
-
   &:focus {
     outline: none;
-    border-color: #00FF66;
-    box-shadow: 0 0 0 2px rgba(0, 255, 102, 0.3);
+    border-color: #C9A843;
+    box-shadow: 0 0 0 2px rgba(201,168,67,0.25);
   }
+}
+
+/* ─── Gold gradient text ────────────────────────────────── */
+.text-gold-gradient {
+  background: linear-gradient(135deg, #E2C06A 0%, #C9A843 50%, #A8872E 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Card hover ────────────────────────────────────────── */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  &:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,0.6); }
+}
+
+/* ─── Shimmer skeleton ──────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #1E0E13 25%, #2A1219 50%, #1E0E13 75%);
+  background-size: 400px 100%;
+  animation: shimmer 1.6s infinite;
+  border-radius: 0.5rem;
 }

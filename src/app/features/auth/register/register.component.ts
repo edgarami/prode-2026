@@ -14,34 +14,64 @@ function passwordsMatch(ctrl: AbstractControl): ValidationErrors | null {
   imports:         [CommonModule, ReactiveFormsModule, RouterModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="min-h-screen flex flex-col" style="background-color:#0d1117">
-      <div class="px-6 pt-10 pb-4">
-        <div class="flex items-center gap-2 mb-1">
-          <span class="text-2xl">⚽</span>
-          <span class="text-xl font-black" style="color:#00FF66">World Cup Predictor</span>
+    <div class="min-h-screen flex flex-col lg:flex-row" style="background:#0E0608">
+
+      <!-- ═══ BANNER (izquierda desktop / top mobile) ═══ -->
+      <div class="relative lg:w-1/2 lg:min-h-screen overflow-hidden" style="min-height:200px">
+
+        <img src="assets/login-banner-desktop.png" alt="World Cup 2026"
+             class="hidden lg:block absolute inset-0 w-full h-full object-cover object-center"/>
+        <img src="assets/login-banner-mobile.png" alt="World Cup 2026"
+             class="lg:hidden absolute inset-0 w-full h-full object-cover object-center"/>
+
+        <!-- Overlay -->
+        <div class="absolute inset-0"
+             style="background:linear-gradient(to bottom, rgba(14,6,8,0.2) 0%, rgba(14,6,8,0.5) 70%, rgba(14,6,8,0.95) 100%)"></div>
+        <div class="hidden lg:block absolute inset-0"
+             style="background:linear-gradient(to right, transparent 60%, #0E0608 100%)"></div>
+
+        <div class="relative z-10 h-full flex flex-col justify-end p-6 lg:p-10 pb-8 lg:pb-12">
+          <div class="flex items-center gap-2.5 mb-3">
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+                 style="background:linear-gradient(135deg,#7B1F35,#3D0E1C)">
+              <span class="text-sm">⚽</span>
+            </div>
+            <span class="font-black text-base"
+                  style="background:linear-gradient(135deg,#E2C06A,#C9A843);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
+              La Quiniela Vinotinto
+            </span>
+          </div>
+          <h2 class="text-2xl lg:text-3xl font-black text-white leading-tight mb-2">
+            Unite a la quiniela<br/>
+            <span style="color:#C9A843">más grande del Mundial.</span>
+          </h2>
+          <p class="text-gray-400 text-sm">Predecí los 104 partidos del Mundial 2026.</p>
         </div>
-        <p class="text-gray-400 text-sm">Mundial 2026 · USA · Canadá · México</p>
       </div>
 
-      <div class="flex-1 flex items-start justify-center px-4 pt-4 pb-16">
-        <div class="w-full max-w-sm">
+      <!-- ═══ FORMULARIO ═══ -->
+      <div class="flex-1 flex items-center justify-center px-6 py-10 lg:py-8">
+        <div class="w-full max-w-sm animate-fade-in">
+
           <div class="mb-6">
             <h1 class="text-2xl font-black text-white">Crear cuenta</h1>
             <p class="text-gray-400 text-sm mt-1">Unite y predecí desde el primer partido.</p>
           </div>
 
           <div *ngIf="error()" class="mb-4 p-3 rounded-xl text-sm text-red-400"
-               style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3)">
+               style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2)">
             {{ error() }}
           </div>
 
           <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-4">
+
             <div>
               <label class="block text-sm font-semibold text-gray-300 mb-2">Nombre o apodo</label>
               <input type="text" formControlName="displayName"
-                class="w-full rounded-xl px-4 py-3 text-white text-sm placeholder-gray-500 focus:outline-none"
-                style="background:#1f2940;border:1px solid #1f2940"
-                placeholder="Ej: Messi Fan 10"/>
+                class="w-full rounded-xl px-4 py-3 text-white text-sm placeholder-gray-500 focus:outline-none transition-all"
+                style="background:#1E0E13;border:1px solid #2A1219"
+                placeholder="Ej: Messi Fan 10"
+                onfocus="this.style.borderColor='#C9A843'" onblur="this.style.borderColor='#2A1219'"/>
               <p *ngIf="form.get('displayName')?.invalid && form.get('displayName')?.touched"
                  class="mt-1 text-xs text-red-400">Nombre entre 2 y 30 caracteres.</p>
             </div>
@@ -49,19 +79,27 @@ function passwordsMatch(ctrl: AbstractControl): ValidationErrors | null {
             <div>
               <label class="block text-sm font-semibold text-gray-300 mb-2">Email</label>
               <input type="email" formControlName="email"
-                class="w-full rounded-xl px-4 py-3 text-white text-sm placeholder-gray-500 focus:outline-none"
-                style="background:#1f2940;border:1px solid #1f2940"
-                placeholder="nombre@ejemplo.com"/>
+                class="w-full rounded-xl px-4 py-3 text-white text-sm placeholder-gray-500 focus:outline-none transition-all"
+                style="background:#1E0E13;border:1px solid #2A1219"
+                placeholder="nombre@ejemplo.com"
+                onfocus="this.style.borderColor='#C9A843'" onblur="this.style.borderColor='#2A1219'"/>
               <p *ngIf="form.get('email')?.invalid && form.get('email')?.touched"
                  class="mt-1 text-xs text-red-400">Email inválido.</p>
             </div>
 
             <div>
               <label class="block text-sm font-semibold text-gray-300 mb-2">Contraseña</label>
-              <input [type]="showPwd() ? 'text' : 'password'" formControlName="password"
-                class="w-full rounded-xl px-4 py-3 text-white text-sm placeholder-gray-500 focus:outline-none"
-                style="background:#1f2940;border:1px solid #1f2940"
-                placeholder="Mínimo 6 caracteres"/>
+              <div class="relative">
+                <input [type]="showPwd() ? 'text' : 'password'" formControlName="password"
+                  class="w-full rounded-xl px-4 py-3 pr-12 text-white text-sm placeholder-gray-500 focus:outline-none transition-all"
+                  style="background:#1E0E13;border:1px solid #2A1219"
+                  placeholder="Mínimo 6 caracteres"
+                  onfocus="this.style.borderColor='#C9A843'" onblur="this.style.borderColor='#2A1219'"/>
+                <button type="button" (click)="showPwd.set(!showPwd())"
+                  class="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors text-sm">
+                  {{ showPwd() ? '🙈' : '👁️' }}
+                </button>
+              </div>
               <p *ngIf="form.get('password')?.invalid && form.get('password')?.touched"
                  class="mt-1 text-xs text-red-400">Mínimo 6 caracteres.</p>
             </div>
@@ -69,42 +107,48 @@ function passwordsMatch(ctrl: AbstractControl): ValidationErrors | null {
             <div>
               <label class="block text-sm font-semibold text-gray-300 mb-2">Confirmá tu contraseña</label>
               <input [type]="showPwd() ? 'text' : 'password'" formControlName="confirmPassword"
-                class="w-full rounded-xl px-4 py-3 text-white text-sm placeholder-gray-500 focus:outline-none"
-                style="background:#1f2940;border:1px solid #1f2940"
-                placeholder="Repetí tu contraseña"/>
+                class="w-full rounded-xl px-4 py-3 text-white text-sm placeholder-gray-500 focus:outline-none transition-all"
+                style="background:#1E0E13;border:1px solid #2A1219"
+                placeholder="Repetí tu contraseña"
+                onfocus="this.style.borderColor='#C9A843'" onblur="this.style.borderColor='#2A1219'"/>
               <p *ngIf="form.errors?.['mismatch'] && form.get('confirmPassword')?.touched"
                  class="mt-1 text-xs text-red-400">Las contraseñas no coinciden.</p>
             </div>
 
-            <label class="flex items-start gap-3 cursor-pointer">
-              <input type="checkbox" formControlName="terms" class="rounded w-4 h-4 mt-0.5 shrink-0"/>
+            <label class="flex items-start gap-3 cursor-pointer pt-1">
+              <input type="checkbox" formControlName="terms"
+                class="w-4 h-4 rounded mt-0.5 shrink-0 cursor-pointer"
+                style="accent-color:#C9A843"/>
               <span class="text-sm text-gray-400">
-                Acepto las reglas del juego y el funcionamiento de la quiniela.
+                Acepto las <a routerLink="/reglas" class="font-semibold hover:opacity-80" style="color:#C9A843">reglas del juego</a> y el funcionamiento de la quiniela.
               </span>
             </label>
             <p *ngIf="form.get('terms')?.invalid && form.get('terms')?.touched"
                class="text-xs text-red-400">Debés aceptar las reglas.</p>
 
             <button type="submit" [disabled]="loading() || form.invalid"
-              class="w-full py-3 px-6 rounded-xl font-black uppercase tracking-wider text-sm transition-all disabled:opacity-40 mt-2"
-              style="background:#00FF66;color:#0d1117">
+              class="w-full py-3.5 px-6 rounded-xl font-black uppercase tracking-wider text-sm transition-all hover:scale-[1.02] disabled:opacity-40 disabled:cursor-not-allowed mt-1"
+              style="background:linear-gradient(135deg,#C9A843,#A8872E);color:#0E0608;box-shadow:0 0 20px rgba(201,168,67,0.25)">
               {{ loading() ? 'Creando cuenta...' : 'CREAR MI CUENTA' }}
             </button>
           </form>
 
-          <div class="relative my-6">
+          <!-- Divider -->
+          <div class="relative my-5">
             <div class="absolute inset-0 flex items-center">
-              <div class="w-full border-t" style="border-color:#1f2940"></div>
+              <div class="w-full" style="border-top:1px solid #2A1219"></div>
             </div>
-            <div class="relative flex justify-center text-xs">
-              <span class="px-3 text-gray-500 uppercase" style="background:#0d1117">O registrate con</span>
+            <div class="relative flex justify-center">
+              <span class="px-3 text-xs text-gray-500 uppercase tracking-widest" style="background:#0E0608">
+                O registrate con
+              </span>
             </div>
           </div>
 
           <button (click)="googleRegister()" [disabled]="loading()"
-            class="w-full py-3 px-6 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-3 hover:opacity-80 transition-opacity"
-            style="border:1px solid #1f2940">
-            <svg class="w-5 h-5" viewBox="0 0 24 24">
+            class="w-full py-3 px-6 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-3 transition-all hover:opacity-80 disabled:opacity-40"
+            style="border:1px solid #2A1219">
+            <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -113,9 +157,11 @@ function passwordsMatch(ctrl: AbstractControl): ValidationErrors | null {
             Continuar con Google
           </button>
 
-          <p class="text-center text-sm text-gray-400 mt-8">
+          <p class="text-center text-sm text-gray-400 mt-6">
             ¿Ya tenés cuenta?
-            <a routerLink="/auth/login" class="font-semibold ml-1" style="color:#00FF66">Iniciá sesión</a>
+            <a routerLink="/auth/login" class="font-bold ml-1 hover:opacity-80 transition-opacity" style="color:#C9A843">
+              Iniciá sesión
+            </a>
           </p>
         </div>
       </div>

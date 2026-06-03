@@ -11,7 +11,7 @@ import { RouterModule } from '@angular/router';
 
       <!-- Header -->
       <div class="relative rounded-3xl overflow-hidden p-8 sm:p-12 text-center"
-           style="background:linear-gradient(135deg,#1a2130 0%,#0d1117 70%,#0a1a0a 100%);border:1px solid #1f2940">
+           style="background:linear-gradient(135deg,#1E0E13 0%,#0E0608 70%,#0a1a0a 100%);border:1px solid #2A1219">
         <div class="text-5xl mb-4">📋</div>
         <h1 class="text-3xl sm:text-4xl font-black text-white mb-3">Reglas del Juego</h1>
         <p class="text-gray-400 text-lg">Domina el sistema de puntuación y escala posiciones en el ranking global.</p>
@@ -24,9 +24,9 @@ import { RouterModule } from '@angular/router';
         </h2>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
-          <div class="rounded-2xl p-6" style="background:#1a2130;border:1px solid rgba(0,255,102,0.3)">
+          <div class="rounded-2xl p-6" style="background:#1E0E13;border:1px solid rgba(201,168,67,0.3)">
             <div class="w-16 h-16 rounded-2xl flex items-center justify-center font-black text-2xl mb-4"
-                 style="background:rgba(0,255,102,0.15);color:#00FF66">+15</div>
+                 style="background:rgba(201,168,67,0.15);color:#C9A843">+15</div>
             <h3 class="text-lg font-black text-white mb-2">Marcador Exacto</h3>
             <p class="text-gray-400 text-sm mb-4">
               Adiviná el resultado exacto del encuentro al finalizar el tiempo reglamentario.
@@ -34,12 +34,12 @@ import { RouterModule } from '@angular/router';
               <span class="text-gray-300 font-medium">Ej: predecís 2-1 y el resultado es 2-1.</span>
             </p>
             <span class="inline-block text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider"
-                  style="background:rgba(0,255,102,0.1);color:#00FF66;border:1px solid rgba(0,255,102,0.2)">
+                  style="background:rgba(201,168,67,0.1);color:#C9A843;border:1px solid rgba(201,168,67,0.2)">
               Máxima recompensa
             </span>
           </div>
 
-          <div class="rounded-2xl p-6" style="background:#1a2130;border:1px solid rgba(245,158,11,0.3)">
+          <div class="rounded-2xl p-6" style="background:#1E0E13;border:1px solid rgba(245,158,11,0.3)">
             <div class="w-16 h-16 rounded-2xl flex items-center justify-center font-black text-2xl mb-4"
                  style="background:rgba(245,158,11,0.15);color:#f59e0b">+10</div>
             <h3 class="text-lg font-black text-white mb-2">Ganador y Diferencia</h3>
@@ -54,7 +54,7 @@ import { RouterModule } from '@angular/router';
             </span>
           </div>
 
-          <div class="rounded-2xl p-6" style="background:#1a2130;border:1px solid rgba(96,165,250,0.3)">
+          <div class="rounded-2xl p-6" style="background:#1E0E13;border:1px solid rgba(96,165,250,0.3)">
             <div class="w-16 h-16 rounded-2xl flex items-center justify-center font-black text-2xl mb-4"
                  style="background:rgba(96,165,250,0.15);color:#60a5fa">+5</div>
             <h3 class="text-lg font-black text-white mb-2">Ganador o Empate</h3>
@@ -78,7 +78,7 @@ import { RouterModule } from '@angular/router';
         </h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
-          <div class="rounded-2xl p-6" style="background:#1a2130;border:1px solid rgba(0,255,102,0.3)">
+          <div class="rounded-2xl p-6" style="background:#1E0E13;border:1px solid rgba(201,168,67,0.3)">
             <div class="flex items-center gap-3 mb-3">
               <span class="text-2xl">🔒</span>
               <h3 class="text-lg font-black text-white">Cierre de Apuestas</h3>
@@ -94,7 +94,7 @@ import { RouterModule } from '@angular/router';
             </div>
           </div>
 
-          <div class="rounded-2xl p-6" style="background:#1a2130;border:1px solid #1f2940">
+          <div class="rounded-2xl p-6" style="background:#1E0E13;border:1px solid #2A1219">
             <div class="flex items-center gap-3 mb-3">
               <span class="text-2xl">📌</span>
               <h3 class="text-lg font-black text-white">Reglas Generales</h3>
@@ -126,18 +126,18 @@ import { RouterModule } from '@angular/router';
         <h2 class="text-xl font-black text-white mb-4 flex items-center gap-2">
           <span class="text-2xl">📊</span> Criterios de Desempate
         </h2>
-        <div class="rounded-2xl p-6" style="background:#1a2130;border:1px solid #1f2940">
+        <div class="rounded-2xl p-6" style="background:#1E0E13;border:1px solid #2A1219">
           <p class="text-gray-400 text-sm mb-5">En caso de igualdad de puntos, el ranking se define por este orden:</p>
           <div class="space-y-3">
-            <div class="flex items-center gap-4 p-3 rounded-xl" style="background:#111820">
+            <div class="flex items-center gap-4 p-3 rounded-xl" style="background:#150A0D">
               <div class="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm shrink-0"
-                   style="background:#f59e0b;color:#0d1117">1</div>
+                   style="background:#f59e0b;color:#0E0608">1</div>
               <div>
                 <p class="font-bold text-white text-sm">Mayor número de marcadores exactos</p>
                 <p class="text-gray-500 text-xs">Prioridad a la precisión total (+15 pts).</p>
               </div>
             </div>
-            <div class="flex items-center gap-4 p-3 rounded-xl" style="background:#111820">
+            <div class="flex items-center gap-4 p-3 rounded-xl" style="background:#150A0D">
               <div class="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm shrink-0"
                    style="background:#6b7280;color:#fff">2</div>
               <div>
@@ -145,7 +145,7 @@ import { RouterModule } from '@angular/router';
                 <p class="text-gray-500 text-xs">Premia al que predijo mejor el margen de victoria (+10 pts).</p>
               </div>
             </div>
-            <div class="flex items-center gap-4 p-3 rounded-xl" style="background:#111820">
+            <div class="flex items-center gap-4 p-3 rounded-xl" style="background:#150A0D">
               <div class="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm shrink-0"
                    style="background:#92400e;color:#fff">3</div>
               <div>
@@ -158,12 +158,12 @@ import { RouterModule } from '@angular/router';
       </section>
 
       <!-- CTA -->
-      <div class="rounded-3xl p-8 text-center" style="background:linear-gradient(135deg,rgba(0,255,102,0.08),rgba(0,255,102,0.02));border:1px solid rgba(0,255,102,0.2)">
+      <div class="rounded-3xl p-8 text-center" style="background:linear-gradient(135deg,rgba(201,168,67,0.08),rgba(201,168,67,0.02));border:1px solid rgba(201,168,67,0.2)">
         <p class="text-2xl font-black text-white mb-2">¿Listo para demostrar tu conocimiento?</p>
         <p class="text-gray-400 text-sm mb-6">Empezá a predecir los próximos encuentros hoy mismo.</p>
         <a routerLink="/mis-apuestas"
            class="inline-flex items-center gap-2 py-3 px-8 rounded-xl font-black uppercase tracking-wider text-sm transition-opacity hover:opacity-90"
-           style="background:#00FF66;color:#0d1117">
+           style="background:linear-gradient(135deg,#C9A843,#A8872E);color:#0E0608">
           ⚽ Ir a Mis Apuestas
         </a>
       </div>

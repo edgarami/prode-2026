@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "public",
+    "public": "dist/world-cup-predictor/browser",
     "ignore": [
       "firebase.json",
       "**/.*",

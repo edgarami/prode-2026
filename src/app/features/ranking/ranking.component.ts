@@ -20,7 +20,7 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
         </div>
         <button (click)="scrollToMe()"
           class="self-start sm:self-auto py-2.5 px-4 rounded-xl text-sm font-semibold text-gray-300 flex items-center gap-2 hover:text-white transition-colors"
-          style="border:1px solid #1f2940">
+          style="border:1px solid #2A1219">
           📍 Mi posición
         </button>
       </div>
@@ -28,8 +28,8 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
       <!-- Podio Top 3 -->
       <div *ngIf="top3().length === 3" class="grid grid-cols-3 gap-3 mb-8">
         <!-- 2do -->
-        <div class="rounded-2xl p-4 flex flex-col items-center text-center mt-6" style="background:#1a2130;border:1px solid #1f2940">
-          <div class="w-14 h-14 rounded-full flex items-center justify-center text-xl font-black mb-2" style="background:#1f2940;color:#9ca3af">
+        <div class="rounded-2xl p-4 flex flex-col items-center text-center mt-6" style="background:#1E0E13;border:1px solid #2A1219">
+          <div class="w-14 h-14 rounded-full flex items-center justify-center text-xl font-black mb-2" style="background:#2A1219;color:#9ca3af">
             {{ top3()[1].displayName.charAt(0) }}
           </div>
           <div class="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm text-white mb-2" style="background:#6b7280">2</div>
@@ -38,18 +38,18 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
           <p class="text-xs text-gray-400">pts</p>
         </div>
         <!-- 1ro -->
-        <div class="rounded-2xl p-4 flex flex-col items-center text-center" style="background:#1a2130;border:1px solid rgba(0,255,102,0.3)">
-          <div class="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black mb-2 border-2" style="background:#1f2940;color:#f59e0b;border-color:#f59e0b">
+        <div class="rounded-2xl p-4 flex flex-col items-center text-center" style="background:#1E0E13;border:1px solid rgba(201,168,67,0.3)">
+          <div class="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-black mb-2 border-2" style="background:#2A1219;color:#f59e0b;border-color:#f59e0b">
             {{ top3()[0].displayName.charAt(0) }}
           </div>
           <div class="text-2xl mb-2">🏆</div>
           <p class="font-bold text-white truncate w-full text-center">{{ top3()[0].displayName }}</p>
-          <p class="text-3xl font-black mt-1" style="color:#00FF66">{{ top3()[0].totalPoints | number }}</p>
+          <p class="text-3xl font-black mt-1" style="color:#C9A843">{{ top3()[0].totalPoints | number }}</p>
           <p class="text-xs text-gray-400">pts</p>
         </div>
         <!-- 3ro -->
-        <div class="rounded-2xl p-4 flex flex-col items-center text-center mt-6" style="background:#1a2130;border:1px solid #1f2940">
-          <div class="w-14 h-14 rounded-full flex items-center justify-center text-xl font-black mb-2" style="background:#1f2940;color:#92400e">
+        <div class="rounded-2xl p-4 flex flex-col items-center text-center mt-6" style="background:#1E0E13;border:1px solid #2A1219">
+          <div class="w-14 h-14 rounded-full flex items-center justify-center text-xl font-black mb-2" style="background:#2A1219;color:#92400e">
             {{ top3()[2].displayName.charAt(0) }}
           </div>
           <div class="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm text-white mb-2" style="background:#92400e">3</div>
@@ -66,15 +66,15 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
         </svg>
         <input type="text" placeholder="Buscar usuario..." [(ngModel)]="searchQuery"
           class="w-full rounded-xl pl-10 pr-4 py-3 text-white text-sm placeholder-gray-500 focus:outline-none"
-          style="background:#1f2940;border:1px solid #1f2940"/>
+          style="background:#2A1219;border:1px solid #2A1219"/>
       </div>
 
       <!-- Tabla -->
-      <div class="rounded-2xl overflow-hidden" style="background:#1a2130;border:1px solid #1f2940">
+      <div class="rounded-2xl overflow-hidden" style="background:#1E0E13;border:1px solid #2A1219">
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead>
-              <tr style="border-bottom:1px solid #1f2940">
+              <tr style="border-bottom:1px solid #2A1219">
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase w-12">Pos.</th>
                 <th class="px-4 py-3 text-left text-xs font-semibold text-gray-400 uppercase">Usuario</th>
                 <th class="px-4 py-3 text-center text-xs font-semibold text-gray-400 uppercase hidden sm:table-cell">Exactos</th>
@@ -93,45 +93,45 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
                   [id]="'u-' + e.userId"
                   class="transition-colors"
                   style="border-bottom:1px solid rgba(31,41,64,0.5)"
-                  [style.background]="e.userId===myId() ? 'rgba(0,255,102,0.05)' : 'transparent'"
-                  [style.border-left]="e.userId===myId() ? '3px solid #00FF66' : '3px solid transparent'">
+                  [style.background]="e.userId===myId() ? 'rgba(201,168,67,0.05)' : 'transparent'"
+                  [style.border-left]="e.userId===myId() ? '3px solid #C9A843' : '3px solid transparent'">
                   <td class="px-4 py-3">
                     <span class="font-black text-sm"
-                      [style.color]="e.rank===1 ? '#f59e0b' : e.rank===2 ? '#9ca3af' : e.rank===3 ? '#92400e' : e.userId===myId() ? '#00FF66' : '#d1d5db'">
+                      [style.color]="e.rank===1 ? '#f59e0b' : e.rank===2 ? '#9ca3af' : e.rank===3 ? '#92400e' : e.userId===myId() ? '#C9A843' : '#d1d5db'">
                       {{ e.rank }}
                     </span>
                   </td>
                   <td class="px-4 py-3">
                     <div class="flex items-center gap-3">
-                      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style="background:#1f2940;color:#9ca3af">
+                      <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style="background:#2A1219;color:#9ca3af">
                         {{ e.displayName.charAt(0).toUpperCase() }}
                       </div>
                       <div>
-                        <p class="font-semibold text-sm" [style.color]="e.userId===myId() ? '#00FF66' : '#fff'">
-                          {{ e.displayName }}<span *ngIf="e.userId===myId()" class="text-xs ml-1" style="color:#00FF66">(vos)</span>
+                        <p class="font-semibold text-sm" [style.color]="e.userId===myId() ? '#C9A843' : '#fff'">
+                          {{ e.displayName }}<span *ngIf="e.userId===myId()" class="text-xs ml-1" style="color:#C9A843">(vos)</span>
                         </p>
                         <p class="text-xs text-gray-500 hidden sm:block">{{ e.country }}</p>
                       </div>
                     </div>
                   </td>
                   <td class="px-4 py-3 text-center hidden sm:table-cell">
-                    <span class="font-semibold text-sm" style="color:#00FF66">{{ e.exactScores }}</span>
+                    <span class="font-semibold text-sm" style="color:#C9A843">{{ e.exactScores }}</span>
                   </td>
                   <td class="px-4 py-3 text-center hidden sm:table-cell">
                     <span class="font-semibold text-sm text-blue-400">{{ e.correctWinners }}</span>
                   </td>
                   <td class="px-4 py-3 text-right">
-                    <span class="font-black" style="color:#00FF66">{{ e.totalPoints | number }}</span>
+                    <span class="font-black" style="color:#C9A843">{{ e.totalPoints | number }}</span>
                   </td>
                 </tr>
               </ng-container>
             </tbody>
           </table>
         </div>
-        <div *ngIf="!loading() && hasMore()" class="p-4" style="border-top:1px solid #1f2940">
+        <div *ngIf="!loading() && hasMore()" class="p-4" style="border-top:1px solid #2A1219">
           <button (click)="loadMore()" [disabled]="loadingMore()"
             class="w-full py-2.5 rounded-xl text-sm font-semibold text-gray-300 hover:text-white transition-colors"
-            style="border:1px solid #1f2940">
+            style="border:1px solid #2A1219">
             {{ loadingMore() ? 'Cargando...' : 'Cargar más' }}
           </button>
         </div>

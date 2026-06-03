@@ -22,10 +22,10 @@ interface PredWithMatch { prediction: Prediction; match: Match | null; }
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
       <!-- Tarjeta de perfil -->
-      <div class="rounded-2xl p-6 mb-8" style="background:#1a2130;border:1px solid #1f2940">
+      <div class="rounded-2xl p-6 mb-8" style="background:#1E0E13;border:1px solid #2A1219">
         <div class="flex flex-col sm:flex-row items-center sm:items-start gap-5">
           <div class="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-black shrink-0"
-               style="background:#1f2940;border:2px solid rgba(0,255,102,0.3);color:#00FF66">
+               style="background:#2A1219;border:2px solid rgba(201,168,67,0.3);color:#C9A843">
             {{ userProfile()?.displayName?.charAt(0)?.toUpperCase() ?? 'U' }}
           </div>
           <div class="flex-1 text-center sm:text-left">
@@ -33,7 +33,7 @@ interface PredWithMatch { prediction: Prediction; match: Match | null; }
             <p class="text-gray-400 text-sm">{{ userProfile()?.email }}</p>
             <div class="flex flex-wrap justify-center sm:justify-start gap-5 mt-4">
               <div class="text-center">
-                <p class="text-2xl font-black" style="color:#00FF66">{{ userProfile()?.totalPoints ?? 0 }}</p>
+                <p class="text-2xl font-black" style="color:#C9A843">{{ userProfile()?.totalPoints ?? 0 }}</p>
                 <p class="text-xs text-gray-400">Puntos</p>
               </div>
               <div class="text-center">
@@ -41,7 +41,7 @@ interface PredWithMatch { prediction: Prediction; match: Match | null; }
                 <p class="text-xs text-gray-400">Posición</p>
               </div>
               <div class="text-center">
-                <p class="text-2xl font-black" style="color:#00FF66">{{ userProfile()?.exactScores ?? 0 }}</p>
+                <p class="text-2xl font-black" style="color:#C9A843">{{ userProfile()?.exactScores ?? 0 }}</p>
                 <p class="text-xs text-gray-400">Exactos 🎯</p>
               </div>
               <div class="text-center">
@@ -52,33 +52,33 @@ interface PredWithMatch { prediction: Prediction; match: Match | null; }
           </div>
           <button (click)="editMode.set(!editMode())"
             class="self-start py-2 px-4 rounded-xl text-sm font-semibold text-gray-300 hover:text-white transition-colors"
-            style="border:1px solid #1f2940">
+            style="border:1px solid #2A1219">
             {{ editMode() ? 'Cancelar' : '✏️ Editar perfil' }}
           </button>
         </div>
 
-        <div *ngIf="editMode()" class="mt-6 pt-6" style="border-top:1px solid #1f2940">
+        <div *ngIf="editMode()" class="mt-6 pt-6" style="border-top:1px solid #2A1219">
           <form [formGroup]="editForm" (ngSubmit)="save()" class="space-y-4 max-w-md">
             <div>
               <label class="block text-sm font-semibold text-gray-300 mb-2">Nombre</label>
               <input type="text" formControlName="displayName"
                 class="w-full rounded-xl px-4 py-3 text-white text-sm focus:outline-none"
-                style="background:#1f2940;border:1px solid #1f2940"/>
+                style="background:#2A1219;border:1px solid #2A1219"/>
             </div>
             <div>
               <label class="block text-sm font-semibold text-gray-300 mb-2">País</label>
               <input type="text" formControlName="country"
                 class="w-full rounded-xl px-4 py-3 text-white text-sm focus:outline-none"
-                style="background:#1f2940;border:1px solid #1f2940"/>
+                style="background:#2A1219;border:1px solid #2A1219"/>
             </div>
             <div class="flex gap-3">
               <button type="submit" [disabled]="saving()"
                 class="py-2.5 px-5 rounded-xl font-bold text-sm disabled:opacity-40"
-                style="background:#00FF66;color:#0d1117">
+                style="background:linear-gradient(135deg,#C9A843,#A8872E);color:#0E0608">
                 {{ saving() ? 'Guardando...' : 'Guardar' }}
               </button>
               <button type="button" (click)="editMode.set(false)"
-                class="py-2.5 px-5 rounded-xl text-sm text-gray-400 hover:text-white" style="border:1px solid #1f2940">
+                class="py-2.5 px-5 rounded-xl text-sm text-gray-400 hover:text-white" style="border:1px solid #2A1219">
                 Cancelar
               </button>
             </div>
@@ -93,8 +93,8 @@ interface PredWithMatch { prediction: Prediction; match: Match | null; }
         <div class="flex flex-wrap gap-2 mb-4">
           <button *ngFor="let f of filters" (click)="activeFilter.set(f.v)"
             class="px-3 py-1.5 rounded-full text-xs font-semibold transition-colors"
-            [style.background]="activeFilter()===f.v ? '#00FF66' : '#1f2940'"
-            [style.color]="activeFilter()===f.v ? '#0d1117' : '#9ca3af'">
+            [style.background]="activeFilter()===f.v ? '#C9A843' : '#2A1219'"
+            [style.color]="activeFilter()===f.v ? '#0E0608' : '#9ca3af'">
             {{ f.l }}
           </button>
         </div>
@@ -103,7 +103,7 @@ interface PredWithMatch { prediction: Prediction; match: Match | null; }
 
         <div *ngIf="!loadingPreds()" class="space-y-3">
           <div *ngFor="let item of filteredPreds(); trackBy: trackById"
-            class="rounded-2xl p-4" style="background:#1a2130;border:1px solid #1f2940">
+            class="rounded-2xl p-4" style="background:#1E0E13;border:1px solid #2A1219">
             <div class="flex items-center gap-4">
               <div class="flex items-center gap-3 flex-1 min-w-0">
                 <app-team-flag *ngIf="item.match" [team]="item.match.homeTeam" size="sm" [showName]="false"></app-team-flag>

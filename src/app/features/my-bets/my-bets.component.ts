@@ -26,7 +26,7 @@ interface StageGroup    { label: string; stage: MatchStage; items: MatchWithPred
         <h1 class="text-3xl font-black text-white">Mis Apuestas</h1>
         <p class="text-gray-400 mt-1 text-sm">
           Predecí los resultados y escalá en el ranking.
-          Tenés hasta <span style="color:#00FF66" class="font-semibold">30 minutos antes</span> de cada partido.
+          Tenés hasta <span style="color:#C9A843" class="font-semibold">30 minutos antes</span> de cada partido.
         </p>
       </div>
 
@@ -35,13 +35,13 @@ interface StageGroup    { label: string; stage: MatchStage; items: MatchWithPred
       <div *ngIf="!loading()">
         <div *ngFor="let group of stageGroups()" class="mb-10">
           <div class="flex items-center gap-3 mb-4">
-            <div class="w-1 h-6 rounded-full" style="background:#00FF66"></div>
+            <div class="w-1 h-6 rounded-full" style="background:#C9A843"></div>
             <h2 class="text-sm font-black text-white uppercase tracking-wider">{{ group.label }}</h2>
           </div>
 
           <div *ngIf="isKnockoutLocked(group.stage)"
             class="rounded-2xl p-4 flex items-center gap-3 mb-4"
-            style="background:#1a2130;border:1px solid rgba(245,158,11,0.3)">
+            style="background:#1E0E13;border:1px solid rgba(245,158,11,0.3)">
             <span class="text-2xl">🔒</span>
             <div>
               <p class="font-semibold text-white text-sm">Predicciones bloqueadas</p>
@@ -53,7 +53,7 @@ interface StageGroup    { label: string; stage: MatchStage; items: MatchWithPred
             <div *ngFor="let item of group.items"
               class="rounded-2xl p-4 transition-all"
               [style.opacity]="isKnockoutLocked(group.stage) ? '0.5' : '1'"
-              style="background:#1a2130;border:1px solid #1f2940">
+              style="background:#1E0E13;border:1px solid #2A1219">
 
               <div class="flex items-center justify-between mb-4">
                 <div>
@@ -66,10 +66,10 @@ interface StageGroup    { label: string; stage: MatchStage; items: MatchWithPred
                 </div>
                 <span class="px-2.5 py-1 rounded-full text-xs font-semibold"
                   [style.background]="item.match.status==='FINISHED' ? 'rgba(239,68,68,0.15)' :
-                                      matchService.canPredict(item.match) ? 'rgba(0,255,102,0.15)' :
+                                      matchService.canPredict(item.match) ? 'rgba(201,168,67,0.15)' :
                                       item.match.status==='IN_PLAY' ? 'rgba(245,158,11,0.15)' : 'rgba(107,114,128,0.2)'"
                   [style.color]="item.match.status==='FINISHED' ? '#f87171' :
-                                 matchService.canPredict(item.match) ? '#00FF66' :
+                                 matchService.canPredict(item.match) ? '#C9A843' :
                                  item.match.status==='IN_PLAY' ? '#fbbf24' : '#9ca3af'">
                   {{ item.match.status==='FINISHED' ? 'Finalizado' :
                      item.match.status==='IN_PLAY'  ? '🔴 En juego' :
@@ -112,10 +112,10 @@ interface StageGroup    { label: string; stage: MatchStage; items: MatchWithPred
                 </div>
               </div>
 
-              <div class="mt-4 pt-3" style="border-top:1px solid #1f2940"
+              <div class="mt-4 pt-3" style="border-top:1px solid #2A1219"
                    *ngIf="matchService.canPredict(item.match)">
                 <button class="w-full py-2 px-4 rounded-xl text-sm font-semibold text-gray-300 flex items-center justify-center gap-2 hover:text-white transition-colors"
-                  style="border:1px solid #1f2940"
+                  style="border:1px solid #2A1219"
                   (click)="openModal(item)">
                   ✏️ {{ item.prediction ? 'Editar predicción' : 'Hacer predicción' }}
                 </button>
@@ -142,7 +142,7 @@ interface StageGroup    { label: string; stage: MatchStage; items: MatchWithPred
       (click)="closeModal()">
       <div class="absolute inset-0" style="background:rgba(0,0,0,0.75)"></div>
       <div class="relative w-full max-w-sm rounded-2xl p-6 shadow-2xl"
-           style="background:#1a2130;border:1px solid #1f2940"
+           style="background:#1E0E13;border:1px solid #2A1219"
            (click)="$event.stopPropagation()">
         <button (click)="closeModal()" class="absolute top-4 right-4 text-gray-500 hover:text-white">✕</button>
 
@@ -169,15 +169,15 @@ interface StageGroup    { label: string; stage: MatchStage; items: MatchWithPred
           </div>
 
           <div class="grid grid-cols-3 gap-2 mb-6 text-center">
-            <div class="p-2 rounded-xl" style="background:#111820">
-              <p class="font-black text-lg" style="color:#00FF66">+15</p>
+            <div class="p-2 rounded-xl" style="background:#150A0D">
+              <p class="font-black text-lg" style="color:#C9A843">+15</p>
               <p class="text-xs text-gray-400">Exacto</p>
             </div>
-            <div class="p-2 rounded-xl" style="background:#111820">
+            <div class="p-2 rounded-xl" style="background:#150A0D">
               <p class="font-black text-lg text-blue-400">+10</p>
               <p class="text-xs text-gray-400">Diferencia</p>
             </div>
-            <div class="p-2 rounded-xl" style="background:#111820">
+            <div class="p-2 rounded-xl" style="background:#150A0D">
               <p class="font-black text-lg text-amber-400">+5</p>
               <p class="text-xs text-gray-400">Tendencia</p>
             </div>
@@ -190,7 +190,7 @@ interface StageGroup    { label: string; stage: MatchStage; items: MatchWithPred
 
           <button (click)="save()" [disabled]="saving()"
             class="w-full py-3 rounded-xl font-black uppercase tracking-wider text-sm disabled:opacity-40"
-            style="background:#00FF66;color:#0d1117">
+            style="background:linear-gradient(135deg,#C9A843,#A8872E);color:#0E0608">
             {{ saving() ? 'Guardando...' : (selectedItem()!.prediction ? 'Actualizar' : 'Confirmar predicción') }}
           </button>
         </ng-container>
