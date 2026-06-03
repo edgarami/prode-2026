@@ -62,6 +62,7 @@ import { RouterModule } from '@angular/router';
           <nav class="flex items-center gap-5 flex-wrap justify-center">
             <a routerLink="/"             class="text-xs text-gray-500 hover:text-white transition-colors">Inicio</a>
             <a routerLink="/mis-apuestas" class="text-xs text-gray-500 hover:text-white transition-colors">Mis Apuestas</a>
+            <a routerLink="/tabla"        class="text-xs text-gray-500 hover:text-white transition-colors">Tabla</a>
             <a routerLink="/ranking"      class="text-xs text-gray-500 hover:text-white transition-colors">Ranking</a>
             <a routerLink="/reglas"       class="text-xs text-gray-500 hover:text-white transition-colors">Reglas</a>
           </nav>

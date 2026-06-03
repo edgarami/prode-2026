@@ -56,6 +56,11 @@ export const routes: Routes = [
           import('./features/rules/rules.component').then(m => m.RulesComponent),
       },
       {
+        path: 'tabla',
+        loadComponent: () =>
+          import('./features/standings/standings.component').then(m => m.StandingsComponent),
+      },
+      {
         path: 'admin',
         canActivate: [adminGuard],
         loadComponent: () =>

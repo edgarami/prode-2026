@@ -34,7 +34,8 @@ import { filter } from 'rxjs/operators';
           <div class="hidden md:flex items-center gap-1">
             <a routerLink="/"            routerLinkActive="active-link" [routerLinkActiveOptions]="{exact:true}" class="nav-link">Inicio</a>
             <a routerLink="/mis-apuestas" routerLinkActive="active-link" class="nav-link">Mis Apuestas</a>
-            <a routerLink="/ranking"     routerLinkActive="active-link" class="nav-link">Ranking</a>
+            <a routerLink="/tabla"        routerLinkActive="active-link" class="nav-link">Tabla</a>
+            <a routerLink="/ranking"      routerLinkActive="active-link" class="nav-link">Ranking</a>
             <a *ngIf="isAdmin()" routerLink="/admin" routerLinkActive="active-link"
                class="nav-link" style="color:#C9A843 !important">⚙ Admin</a>
           </div>
@@ -111,6 +112,7 @@ import { filter } from 'rxjs/operators';
           <div class="flex flex-col gap-1">
             <a routerLink="/"             (click)="mobileOpen.set(false)" class="mobile-link">🏠 Inicio</a>
             <a routerLink="/mis-apuestas" (click)="mobileOpen.set(false)" class="mobile-link">⚽ Mis Apuestas</a>
+            <a routerLink="/tabla"        (click)="mobileOpen.set(false)" class="mobile-link">📊 Tabla de Posiciones</a>
             <a routerLink="/ranking"      (click)="mobileOpen.set(false)" class="mobile-link">🏆 Ranking</a>
             <a routerLink="/perfil"       (click)="mobileOpen.set(false)" class="mobile-link">👤 Mi Perfil</a>
             <a routerLink="/reglas"       (click)="mobileOpen.set(false)" class="mobile-link">📋 Reglas</a>

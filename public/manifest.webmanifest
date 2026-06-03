@@ -1,0 +1,49 @@
+{
+  "name": "La Quiniela Vinotinto",
+  "short_name": "Quiniela",
+  "description": "Predecí los partidos del Mundial 2026 y competí con tus amigos.",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/",
+  "background_color": "#0E0608",
+  "theme_color": "#7B1F35",
+  "icons": [
+    {
+      "src": "assets/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "assets/login-banner-desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "La Quiniela Vinotinto - Desktop"
+    },
+    {
+      "src": "assets/login-banner-mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "La Quiniela Vinotinto - Mobile"
+    }
+  ],
+  "categories": ["sports", "games", "entertainment"],
+  "lang": "es-AR"
+}
