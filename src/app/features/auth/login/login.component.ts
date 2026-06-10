@@ -34,9 +34,9 @@ import { AuthService } from '../../../core/services/auth.service';
         <!-- Contenido sobre el banner -->
         <div class="relative z-10 h-full flex flex-col justify-end p-6 lg:p-10 pb-8 lg:pb-12">
           <div class="flex items-center gap-2.5 mb-3">
-            <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden"
                  style="background:linear-gradient(135deg,#7B1F35,#3D0E1C)">
-              <span class="text-sm">⚽</span>
+              <img src="assets/trionda.png" alt="Trionda" class="w-full h-full object-contain p-0.5"/>
             </div>
             <span class="font-black text-base"
                   style="background:linear-gradient(135deg,#E2C06A,#C9A843);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">

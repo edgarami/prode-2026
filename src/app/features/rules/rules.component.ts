@@ -12,9 +12,23 @@ import { RouterModule } from '@angular/router';
       <!-- Header -->
       <div class="relative rounded-3xl overflow-hidden p-8 sm:p-12 text-center"
            style="background:linear-gradient(135deg,#1E0E13 0%,#0E0608 70%,#0a1a0a 100%);border:1px solid #2A1219">
-        <div class="text-5xl mb-4">📋</div>
-        <h1 class="text-3xl sm:text-4xl font-black text-white mb-3">Reglas del Juego</h1>
-        <p class="text-gray-400 text-lg">Domina el sistema de puntuación y escala posiciones en el ranking global.</p>
+        <!-- Copa flotante izquierda -->
+        <img src="assets/copa-mundial-sin-fondo.png" alt=""
+             class="absolute left-4 bottom-0 w-28 sm:w-36 opacity-20 pointer-events-none select-none"
+             aria-hidden="true"
+             style="filter:drop-shadow(0 0 16px rgba(201,168,67,0.4))"/>
+        <!-- Copa flotante derecha espejada -->
+        <img src="assets/copa-mundial-sin-fondo.png" alt=""
+             class="absolute right-4 bottom-0 w-28 sm:w-36 opacity-20 pointer-events-none select-none"
+             aria-hidden="true"
+             style="filter:drop-shadow(0 0 16px rgba(201,168,67,0.4));transform:scaleX(-1)"/>
+        <div class="relative z-10">
+          <img src="assets/logo-copa-del-mundo.jpg" alt="FIFA World Cup 2026"
+               class="w-16 h-16 object-contain rounded-2xl mx-auto mb-4"
+               style="border:1px solid rgba(201,168,67,0.3)"/>
+          <h1 class="text-3xl sm:text-4xl font-black text-white mb-3">Reglas del Juego</h1>
+          <p class="text-gray-400 text-lg">Domina el sistema de puntuación y escala posiciones en el ranking global.</p>
+        </div>
       </div>
 
       <!-- Sistema de puntos -->

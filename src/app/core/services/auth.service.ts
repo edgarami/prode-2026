@@ -44,10 +44,10 @@ export class AuthService {
     await this.router.navigate(['/']);
   }
 
-  async registerWithEmail(email: string, password: string, displayName: string): Promise<void> {
+  async registerWithEmail(email: string, password: string, displayName: string, leagueIds: string[] = []): Promise<void> {
     const cred = await createUserWithEmailAndPassword(this.auth, email, password);
     await updateProfile(cred.user, { displayName });
-    const profile = await this.userService.createUserProfile(cred.user, displayName);
+    const profile = await this.userService.createUserProfile(cred.user, displayName, leagueIds);
     this._userProfile.set(profile);
     await this.router.navigate(['/']);
   }
@@ -56,7 +56,8 @@ export class AuthService {
     const cred = await signInWithPopup(this.auth, new GoogleAuthProvider());
     let profile = await this.userService.getUserProfile(cred.user.uid);
     if (!profile) {
-      profile = await this.userService.createUserProfile(cred.user, cred.user.displayName ?? 'Usuario');
+      // Usuario nuevo con Google: sin liga hasta que ingrese un código desde su perfil
+      profile = await this.userService.createUserProfile(cred.user, cred.user.displayName ?? 'Usuario', []);
     }
     this._userProfile.set(profile);
     await this.router.navigate(['/']);

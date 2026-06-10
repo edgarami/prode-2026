@@ -61,6 +61,11 @@ export const routes: Routes = [
           import('./features/standings/standings.component').then(m => m.StandingsComponent),
       },
       {
+        path: 'instalar',
+        loadComponent: () =>
+          import('./features/install/install.component').then(m => m.InstallComponent),
+      },
+      {
         path: 'admin',
         canActivate: [adminGuard],
         loadComponent: () =>

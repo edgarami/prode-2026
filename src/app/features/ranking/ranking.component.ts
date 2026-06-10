@@ -1,9 +1,10 @@
-import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RankingService }          from '../../core/services/ranking.service';
 import { AuthService }             from '../../core/services/auth.service';
-import { RankingEntry }            from '../../core/models';
+import { LeagueService }           from '../../core/services/league.service';
+import { RankingEntry, League }    from '../../core/models';
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 
 @Component({
@@ -13,16 +14,45 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
   imports: [CommonModule, FormsModule, LoadingSpinnerComponent],
   template: `
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-        <div>
-          <h1 class="text-3xl font-black text-white">Ranking del Torneo</h1>
-          <p class="text-gray-400 text-sm mt-1">Los mejores predictores ganan premios exclusivos.</p>
+
+      <!-- Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+        <div class="flex items-center gap-4">
+          <img src="assets/copa-mundial-sin-fondo.png" alt="Copa"
+               class="w-14 h-14 object-contain shrink-0"
+               style="filter:drop-shadow(0 0 12px rgba(201,168,67,0.5))"/>
+          <div>
+            <h1 class="text-3xl font-black text-white">Ranking</h1>
+            <p class="text-gray-400 text-sm mt-1">Los mejores predictores del torneo.</p>
+          </div>
         </div>
         <button (click)="scrollToMe()"
           class="self-start sm:self-auto py-2.5 px-4 rounded-xl text-sm font-semibold text-gray-300 flex items-center gap-2 hover:text-white transition-colors"
           style="border:1px solid #2A1219">
           📍 Mi posición
         </button>
+      </div>
+
+      <!-- Selector de liga -->
+      <div *ngIf="userLeagues().length > 0" class="mb-6 flex flex-wrap gap-2">
+        <button *ngFor="let l of userLeagues()" (click)="selectLeague(l.id)"
+          class="px-4 py-2 rounded-xl text-sm font-bold transition-all"
+          [style.background]="selectedLeagueId()===l.id ? 'linear-gradient(135deg,#7B1F35,#3D0E1C)' : '#1E0E13'"
+          [style.color]="selectedLeagueId()===l.id ? '#E2C06A' : '#9ca3af'"
+          [style.border]="selectedLeagueId()===l.id ? '1px solid rgba(201,168,67,0.4)' : '1px solid #2A1219'">
+          🏆 {{ l.name }}
+          <span *ngIf="l.isDefault" class="ml-1 text-xs opacity-60">(general)</span>
+        </button>
+      </div>
+
+      <!-- Liga activa badge -->
+      <div *ngIf="activeLeague()" class="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl"
+           style="background:rgba(123,31,53,0.2);border:1px solid rgba(123,31,53,0.3)">
+        <span class="text-lg">🏆</span>
+        <div>
+          <p class="text-white font-bold text-sm">{{ activeLeague()!.name }}</p>
+          <p class="text-gray-400 text-xs">{{ entries().length }} participantes · Solo ves a los de tu liga</p>
+        </div>
       </div>
 
       <!-- Podio Top 3 -->
@@ -89,7 +119,7 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
                 </td>
               </tr>
               <ng-container *ngIf="!loading()">
-                <tr *ngFor="let e of filtered(); trackBy: track"
+                <tr *ngFor="let e of filteredEntries(); trackBy: track"
                   [id]="'u-' + e.userId"
                   class="transition-colors"
                   style="border-bottom:1px solid rgba(31,41,64,0.5)"
@@ -124,77 +154,93 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
                     <span class="font-black" style="color:#C9A843">{{ e.totalPoints | number }}</span>
                   </td>
                 </tr>
+                <tr *ngIf="filteredEntries().length === 0">
+                  <td colspan="5" class="py-12 text-center">
+                    <p class="text-gray-500 text-sm">No hay participantes en esta liga todavía.</p>
+                  </td>
+                </tr>
               </ng-container>
             </tbody>
           </table>
         </div>
-        <div *ngIf="!loading() && hasMore()" class="p-4" style="border-top:1px solid #2A1219">
-          <button (click)="loadMore()" [disabled]="loadingMore()"
-            class="w-full py-2.5 rounded-xl text-sm font-semibold text-gray-300 hover:text-white transition-colors"
-            style="border:1px solid #2A1219">
-            {{ loadingMore() ? 'Cargando...' : 'Cargar más' }}
-          </button>
-        </div>
       </div>
+
+      <!-- Sin ligas -->
+      <div *ngIf="!loading() && userLeagues().length === 0"
+           class="mt-6 rounded-2xl p-6 text-center" style="background:#1E0E13;border:1px solid #2A1219">
+        <p class="text-3xl mb-3">🏆</p>
+        <p class="text-white font-bold">No estás en ninguna liga</p>
+        <p class="text-gray-400 text-sm mt-1">Pedíle un código de invitación al administrador y uníte desde tu perfil.</p>
+      </div>
+
     </div>
   `,
 })
 export class RankingComponent implements OnInit {
   private rankingService = inject(RankingService);
   private authService    = inject(AuthService);
+  private leagueService  = inject(LeagueService);
+  private cdr            = inject(ChangeDetectorRef);
 
-  loading     = signal(true);
-  loadingMore = signal(false);
-  hasMore     = signal(false);
-  entries     = signal<RankingEntry[]>([]);
-  top3        = signal<RankingEntry[]>([]);
-  myId        = signal('');
-  searchQuery = '';
+  loading          = signal(true);
+  entries          = signal<RankingEntry[]>([]);
+  top3             = signal<RankingEntry[]>([]);
+  myId             = signal('');
+  searchQuery      = '';
+  userLeagues      = signal<League[]>([]);
+  selectedLeagueId = signal('');
 
-  private offset = 0;
+  get activeLeague(): ReturnType<typeof signal<League | null>> {
+    const id = this.selectedLeagueId();
+    return signal(this.userLeagues().find(l => l.id === id) ?? null);
+  }
 
   ngOnInit(): void {
     this.myId.set(this.authService.currentUser()?.uid ?? '');
-    this.load();
+    this.loadLeagues();
   }
 
-  private async load(): Promise<void> {
+  private async loadLeagues(): Promise<void> {
+    const profile = this.authService.userProfile();
+    if (!profile) return;
+
+    const leagues = await this.leagueService.getUserLeagues(profile.leagues ?? []);
+    this.userLeagues.set(leagues);
+
+    if (leagues.length > 0) {
+      // Seleccionar liga default si existe, sino la primera
+      const def = leagues.find(l => l.isDefault) ?? leagues[0];
+      this.selectedLeagueId.set(def.id);
+      await this.loadRanking(def.id);
+    } else {
+      this.loading.set(false);
+    }
+    this.cdr.markForCheck();
+  }
+
+  async selectLeague(leagueId: string): Promise<void> {
+    this.selectedLeagueId.set(leagueId);
+    await this.loadRanking(leagueId);
+  }
+
+  private async loadRanking(leagueId: string): Promise<void> {
     this.loading.set(true);
     try {
-      const [t3, page] = await Promise.all([
-        this.rankingService.getTopThree(),
-        this.rankingService.getRanking(20),
-      ]);
-      this.top3.set(t3);
-      this.entries.set(page.entries.map((e, i) => ({ ...e, rank: i + 1 })));
-      this.offset = page.entries.length;
-      this.hasMore.set(page.entries.length === 20);
+      const entries = await this.leagueService.getRankingByLeague(leagueId);
+      this.entries.set(entries);
+      this.top3.set(entries.slice(0, 3).filter((_, i) => entries.length >= 3 ? true : false));
     } catch (e) {
       console.error('Error cargando ranking:', e);
     } finally {
       this.loading.set(false);
+      this.cdr.markForCheck();
     }
   }
 
-  async loadMore(): Promise<void> {
-    this.loadingMore.set(true);
-    try {
-      const page = await this.rankingService.getRanking(this.offset + 20);
-      const all  = page.entries.map((e, i) => ({ ...e, rank: i + 1 }));
-      this.entries.set(all);
-      this.offset = all.length;
-      this.hasMore.set(page.entries.length % 20 === 0 && page.entries.length > this.offset - 20);
-    } catch (e) {
-      console.error('Error cargando más:', e);
-    } finally {
-      this.loadingMore.set(false);
-    }
-  }
-
-  get filtered(): ReturnType<typeof signal<RankingEntry[]>> {
+  filteredEntries(): RankingEntry[] {
     const q = this.searchQuery.trim().toLowerCase();
-    if (!q) return this.entries;
-    return signal(this.entries().filter(e => e.displayName.toLowerCase().includes(q)));
+    if (!q) return this.entries();
+    return this.entries().filter(e => e.displayName.toLowerCase().includes(q));
   }
 
   scrollToMe(): void {

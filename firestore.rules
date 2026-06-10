@@ -22,11 +22,12 @@ service cloud.firestore {
     }
 
     match /predictions/{predId} {
-      allow read: if isAuth() && (resource.data.userId == request.auth.uid || isAdmin());
+      // resource == null cubre el caso de documento inexistente (primera apuesta del usuario en ese partido)
+      allow read: if isAuth() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
 
       allow create: if isAuth()
         && request.resource.data.userId == request.auth.uid
-        && predId == request.auth.uid + '_' + request.resource.data.matchId
+        && predId == request.auth.uid + '_' + string(request.resource.data.matchId)
         && request.resource.data.predictedHome >= 0
         && request.resource.data.predictedAway >= 0
         && request.resource.data.calculated == false;
@@ -34,6 +35,20 @@ service cloud.firestore {
       allow update: if (isAuth() && resource.data.userId == request.auth.uid && !resource.data.calculated)
                     || isAdmin();
 
+      allow delete: if isAdmin();
+    }
+
+    match /standings/{docId} {
+      allow read:  if isAuth();
+      allow write: if isAdmin();
+    }
+
+    match /leagues/{leagueId} {
+      // Cualquier usuario autenticado puede leer (para validar código de invitación)
+      allow read:   if isAuth();
+      // Solo admin puede crear/editar ligas
+      allow create: if isAdmin();
+      allow update: if isAdmin();
       allow delete: if isAdmin();
     }
   }

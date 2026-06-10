@@ -67,7 +67,10 @@ import { RouterModule } from '@angular/router';
             <a routerLink="/reglas"       class="text-xs text-gray-500 hover:text-white transition-colors">Reglas</a>
           </nav>
 
-          <p class="text-xs" style="color:#3D0E1C">© 2026 La Quiniela Vinotinto.</p>
+          <div class="text-center sm:text-right">
+            <p class="text-xs" style="color:#3D0E1C">© 2026 La Quiniela Vinotinto.</p>
+            <p class="text-xs mt-0.5" style="color:#3D0E1C">Desarrollado por <span style="color:#5A1525">Edgar Ramírez</span></p>
+          </div>
         </div>
       </div>
     </footer>

@@ -7,6 +7,8 @@ body {
   font-family: 'Inter', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Safe area para iOS PWA (Dynamic Island / home indicator) */
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* ─── Scrollbar ─────────────────────────────────────────── */

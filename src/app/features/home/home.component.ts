@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { AuthService }    from '../../core/services/auth.service';
 import { MatchService }   from '../../core/services/match.service';
 import { RankingService } from '../../core/services/ranking.service';
+import { LeagueService }  from '../../core/services/league.service';
 import { Match, RankingEntry, STAGE_LABELS, MatchStage } from '../../core/models';
 import { CountdownComponent } from '../../shared/components/countdown/countdown.component';
 import { TeamFlagComponent }  from '../../shared/components/team-flag/team-flag.component';
@@ -99,6 +100,13 @@ import { MatchDatePipe }      from '../../shared/pipes/match-date.pipe';
         </svg>
       </div>
 
+      <!-- Copa flotante decorativa (top-right) -->
+      <div class="absolute top-0 right-0 w-64 sm:w-80 lg:w-96 h-full pointer-events-none overflow-hidden" aria-hidden="true">
+        <img src="assets/copa-mundial-sin-fondo.png" alt=""
+             class="absolute -top-6 -right-10 w-72 sm:w-96 opacity-10 animate-float object-contain select-none"
+             style="filter:drop-shadow(0 0 40px rgba(201,168,67,0.3))"/>
+      </div>
+
       <!-- Contenido del hero -->
       <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
 
@@ -135,7 +143,8 @@ import { MatchDatePipe }      from '../../shared/pipes/match-date.pipe';
                   {{ nextMatch()!.group ?? stageLabel(nextMatch()!.stage) }}
                 </p>
 
-                <app-countdown [targetDate]="nextMatch()!.utcDate"></app-countdown>
+                <app-countdown [targetDate]="nextMatch()!.utcDate"
+                              (countdownExpired)="onCountdownExpired()"></app-countdown>
 
                 <div class="mt-8 flex flex-wrap gap-3">
                   <a routerLink="/mis-apuestas"
@@ -180,7 +189,9 @@ import { MatchDatePipe }      from '../../shared/pipes/match-date.pipe';
 
           <ng-template #emptyHero>
             <div class="text-center py-10">
-              <div class="text-6xl mb-4 animate-float inline-block">🏆</div>
+              <img src="assets/copa-mundial-sin-fondo.png" alt="Copa Mundial"
+                   class="w-28 h-28 object-contain mx-auto mb-4 animate-float"
+                   style="filter:drop-shadow(0 0 24px rgba(201,168,67,0.4))"/>
               <p class="text-xl font-black text-white mb-2">¡El Mundial 2026 se acerca!</p>
               <p class="text-gray-400 text-sm">Sincronizá los partidos desde el panel de administración.</p>
             </div>
@@ -272,35 +283,14 @@ import { MatchDatePipe }      from '../../shared/pipes/match-date.pipe';
       <!-- ══ BANNER INFORMATIVO ═══════════════════════════ -->
       <section class="relative rounded-3xl overflow-hidden"
                style="background:#1E0E13;border:1px solid #2A1219;min-height:160px">
-        <!-- SVG decorativo -->
-        <div class="absolute inset-0 pointer-events-none" aria-hidden="true">
-          <svg viewBox="0 0 900 160" preserveAspectRatio="xMidYMid slice"
-               class="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <linearGradient id="bannerGrad" x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%"   stop-color="#7B1F35" stop-opacity="0.5"/>
-                <stop offset="50%"  stop-color="#3D0E1C" stop-opacity="0.2"/>
-                <stop offset="100%" stop-color="#1E0E13" stop-opacity="0"/>
-              </linearGradient>
-            </defs>
-            <rect width="900" height="160" fill="url(#bannerGrad)"/>
-            <!-- Balón SVG decorativo -->
-            <g transform="translate(780,80)" opacity="0.12">
-              <circle r="60" fill="none" stroke="#C9A843" stroke-width="2"/>
-              <circle r="20" fill="#C9A843"/>
-              <line x1="0" y1="-60" x2="0" y2="60"   stroke="#C9A843" stroke-width="1.5"/>
-              <line x1="-60" y1="0" x2="60" y2="0"   stroke="#C9A843" stroke-width="1.5"/>
-              <line x1="-42" y1="-42" x2="42" y2="42" stroke="#C9A843" stroke-width="1.5"/>
-              <line x1="42" y1="-42" x2="-42" y2="42" stroke="#C9A843" stroke-width="1.5"/>
-            </g>
-            <!-- Copa -->
-            <g transform="translate(820,80) scale(0.9)" opacity="0.1" fill="#C9A843">
-              <path d="M-20,-50 Q-30,-20 -15,0 Q-10,15 0,20 Q10,15 15,0 Q30,-20 20,-50Z"/>
-              <rect x="-8" y="20" width="16" height="25"/>
-              <rect x="-18" y="42" width="36" height="6" rx="3"/>
-            </g>
-          </svg>
-        </div>
+        <!-- Gradiente vinotinto izquierda -->
+        <div class="absolute inset-0 pointer-events-none" aria-hidden="true"
+             style="background:linear-gradient(to right, rgba(123,31,53,0.45) 0%, rgba(61,14,28,0.2) 50%, transparent 100%)"></div>
+        <!-- Copa decorativa derecha -->
+        <img src="assets/copa-mundial-sin-fondo.png" alt=""
+             class="absolute -right-4 -bottom-4 w-36 sm:w-44 opacity-20 pointer-events-none select-none"
+             aria-hidden="true"
+             style="filter:drop-shadow(0 0 20px rgba(201,168,67,0.5))"/>
         <div class="relative z-10 p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <p class="text-xs font-bold uppercase tracking-widest mb-1" style="color:#9B2D47">MUNDIAL 2026 · USA · CANADA · MEXICO</p>
@@ -322,7 +312,7 @@ import { MatchDatePipe }      from '../../shared/pipes/match-date.pipe';
         <div class="lg:col-span-3 rounded-2xl p-6" style="background:#1E0E13;border:1px solid #2A1219">
           <div class="flex items-center justify-between mb-5">
             <h2 class="text-lg font-black text-white flex items-center gap-2">
-              🏆 <span>Top Global</span>
+              🏆 <span>{{ leagueName() || 'Ranking' }}</span>
             </h2>
             <a routerLink="/ranking" class="text-xs font-semibold hover:opacity-80"
                style="color:#C9A843">Ver ranking →</a>
@@ -373,8 +363,13 @@ import { MatchDatePipe }      from '../../shared/pipes/match-date.pipe';
             </ng-container>
             <ng-template #emptyRanking>
               <div class="text-center py-8">
-                <p class="text-3xl mb-2">👾</p>
-                <p class="text-gray-400 text-sm">¡Sé el primero en hacer una predicción!</p>
+                <p class="text-3xl mb-2">🏆</p>
+                <p class="text-gray-400 text-sm" *ngIf="leagueName()">¡Sé el primero en hacer una predicción!</p>
+                <ng-container *ngIf="!leagueName()">
+                  <p class="text-gray-400 text-sm">Todavía no estás en ninguna liga.</p>
+                  <a routerLink="/perfil" class="inline-block mt-3 text-xs font-bold hover:opacity-80"
+                     style="color:#C9A843">Unite con un código desde tu perfil →</a>
+                </ng-container>
               </div>
             </ng-template>
           </div>
@@ -479,12 +474,14 @@ export class HomeComponent implements OnInit {
   private authService   = inject(AuthService);
   readonly matchService = inject(MatchService);
   private rankingService= inject(RankingService);
+  private leagueService = inject(LeagueService);
   private cdr           = inject(ChangeDetectorRef);
 
   userProfile    = this.authService.userProfile;
   nextMatch      = signal<Match | null>(null);
   todayMatches   = signal<Match[]>([]);
   topUsers       = signal<RankingEntry[]>([]);
+  leagueName     = signal('');
   loadingHero    = signal(true);
   loadingMatches = signal(true);
   loadingRanking = signal(true);
@@ -513,10 +510,32 @@ export class HomeComponent implements OnInit {
 
   private async loadRanking(): Promise<void> {
     try {
-      const result = await this.rankingService.getRanking(5);
-      this.topUsers.set(result.entries.map((e, i) => ({ ...e, rank: i + 1 })));
+      // Esperar a que el perfil cargue (hasta 5s) — en un refresh tarda un momento
+      for (let i = 0; i < 25 && !this.userProfile(); i++) {
+        await new Promise(r => setTimeout(r, 200));
+      }
+      // Vista previa del ranking de la primera liga del usuario
+      const leagueIds = this.userProfile()?.leagues ?? [];
+      if (leagueIds.length > 0) {
+        const [leagues, entries] = await Promise.all([
+          this.leagueService.getUserLeagues([leagueIds[0]]),
+          this.leagueService.getRankingByLeague(leagueIds[0]),
+        ]);
+        this.leagueName.set(leagues[0]?.name ?? 'Ranking');
+        this.topUsers.set(entries.slice(0, 5));
+      } else {
+        // Usuario sin liga: no mostrar a nadie
+        this.topUsers.set([]);
+      }
     } catch (e) { console.error(e); this.topUsers.set([]); }
     finally { this.loadingRanking.set(false); this.cdr.markForCheck(); }
+  }
+
+  // Cuando el countdown expira, espera 3 segundos y carga el siguiente partido
+  onCountdownExpired(): void {
+    setTimeout(async () => {
+      await this.loadNextMatch();
+    }, 3000);
   }
 
   stageLabel(s: string): string { return STAGE_LABELS[s as MatchStage] ?? s; }

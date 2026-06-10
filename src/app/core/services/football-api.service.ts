@@ -11,10 +11,10 @@ export class FootballApiService {
   // En desarrollo usamos el proxy local para evitar CORS.
   // En producción se usa la URL directa (desde GitHub Actions / server).
   private get base(): string {
-    if (!environment.production) {
-      return `/api/football/v4/competitions/${environment.competitionCode}`;
-    }
-    return `${environment.footballApiUrl}/competitions/${environment.competitionCode}`;
+    const isLocal = window.location.hostname === 'localhost';
+    return isLocal
+      ? `/api/football/v4/competitions/${environment.competitionCode}`
+      : `${environment.footballApiUrl}/competitions/${environment.competitionCode}`;
   }
 
   private get headers(): HttpHeaders {

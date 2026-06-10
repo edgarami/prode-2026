@@ -1,145 +1,226 @@
 #!/usr/bin/env node
 /**
  * sync-results.js — Sincroniza resultados de football-data.org → Firestore
- * y recalcula puntos de predicciones.
+ * y calcula puntos de las predicciones. Pensado para GitHub Actions.
  *
  * Variables de entorno necesarias:
  *   FOOTBALL_API_KEY    → Token de football-data.org
  *   FIREBASE_PROJECT_ID → ID del proyecto Firebase
- *   FIREBASE_API_KEY    → API Key pública de Firebase (para REST API)
+ *   FIREBASE_API_KEY    → API Key pública de Firebase
+ *   ADMIN_EMAIL         → Email del usuario admin
+ *   ADMIN_PASSWORD      → Contraseña del admin
  *
  * Ejecutar: node scripts/sync-results.js
+ * (local: lee .env.local si existe)
  */
 'use strict';
 
 const https = require('https');
+const fs    = require('fs');
+const path  = require('path');
 
-const FOOTBALL_API_KEY  = process.env.FOOTBALL_API_KEY;
-const FIREBASE_PROJECT  = process.env.FIREBASE_PROJECT_ID;
-const FIREBASE_API_KEY  = process.env.FIREBASE_API_KEY;
-const COMPETITION_CODE  = 'WC';
+// Cargar .env.local si existe (uso local)
+const envPath = path.join(__dirname, '..', '.env.local');
+if (fs.existsSync(envPath)) {
+  fs.readFileSync(envPath, 'utf8').split('\n').forEach(line => {
+    const idx = line.indexOf('=');
+    if (idx > 0) {
+      const k = line.substring(0, idx).trim();
+      const v = line.substring(idx + 1).trim();
+      if (k && v && !process.env[k]) process.env[k] = v;
+    }
+  });
+}
 
-if (!FOOTBALL_API_KEY || !FIREBASE_PROJECT || !FIREBASE_API_KEY) {
-  console.error('❌ Faltan variables de entorno: FOOTBALL_API_KEY, FIREBASE_PROJECT_ID, FIREBASE_API_KEY');
+const FOOTBALL_KEY = process.env.FOOTBALL_API_KEY;
+const FB_PROJECT   = process.env.FIREBASE_PROJECT_ID;
+const FB_API_KEY   = process.env.FIREBASE_API_KEY;
+const ADMIN_EMAIL  = process.env.ADMIN_EMAIL;
+const ADMIN_PASS   = process.env.ADMIN_PASSWORD;
+const COMPETITION  = 'WC';
+
+if (!FOOTBALL_KEY || !FB_PROJECT || !FB_API_KEY || !ADMIN_EMAIL || !ADMIN_PASS) {
+  console.error('❌ Faltan variables: FOOTBALL_API_KEY, FIREBASE_PROJECT_ID, FIREBASE_API_KEY, ADMIN_EMAIL, ADMIN_PASSWORD');
   process.exit(1);
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
-function get(url, headers = {}) {
+// ── HTTP helpers ───────────────────────────────────────────────────────────────
+function httpGet(url, headers = {}) {
   return new Promise((resolve, reject) => {
-    https.get(url, { headers: { 'User-Agent': 'WCP/1.0', ...headers } }, (res) => {
+    https.get(url, { headers: { 'User-Agent': 'WCP-Sync/1.0', ...headers } }, res => {
       let d = '';
       res.on('data', c => d += c);
-      res.on('end', () => res.statusCode >= 400 ? reject(new Error(`HTTP ${res.statusCode}: ${d}`)) : resolve(JSON.parse(d)));
+      res.on('end', () => {
+        if (res.statusCode >= 400) return reject(new Error(`HTTP ${res.statusCode}: ${d.substring(0, 300)}`));
+        try { resolve(JSON.parse(d)); } catch { reject(new Error(`JSON parse: ${d.substring(0, 100)}`)); }
+      });
     }).on('error', reject);
   });
 }
 
-function firestoreGet(path) {
-  return get(`https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents${path}?key=${FIREBASE_API_KEY}`);
-}
-
-function firestorePatch(path, fields) {
+function httpJson(method, url, body, headers = {}) {
   return new Promise((resolve, reject) => {
-    const body = JSON.stringify({ fields });
-    const url  = new URL(`https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT}/databases/(default)/documents${path}?key=${FIREBASE_API_KEY}`);
-    const req  = https.request({ hostname: url.hostname, path: url.pathname + url.search, method: 'PATCH',
-      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, (res) => {
-        let d = '';
-        res.on('data', c => d += c);
-        res.on('end', () => res.statusCode >= 400 ? reject(new Error(`Firestore ${res.statusCode}: ${d}`)) : resolve({}));
+    const data   = body ? JSON.stringify(body) : '';
+    const urlObj = new URL(url);
+    const req = https.request({
+      hostname: urlObj.hostname,
+      path:     urlObj.pathname + urlObj.search,
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(data ? { 'Content-Length': Buffer.byteLength(data) } : {}),
+        ...headers,
+      },
+    }, res => {
+      let d = '';
+      res.on('data', c => d += c);
+      res.on('end', () => {
+        if (res.statusCode >= 400) return reject(new Error(`HTTP ${res.statusCode}: ${d.substring(0, 300)}`));
+        try { resolve(d ? JSON.parse(d) : {}); } catch { resolve({}); }
       });
+    });
     req.on('error', reject);
-    req.write(body);
+    if (data) req.write(data);
     req.end();
   });
 }
 
-const sv = v => typeof v === 'string'  ? { stringValue: v }   :
-               typeof v === 'number'  ? { integerValue: v }  :
-               typeof v === 'boolean' ? { booleanValue: v }  : { nullValue: null };
+const FS_BASE = `https://firestore.googleapis.com/v1/projects/${FB_PROJECT}/databases/(default)/documents`;
+
+function fsGet(pathStr, idToken) {
+  return httpJson('GET', `${FS_BASE}${pathStr}`, null, { 'Authorization': `Bearer ${idToken}` });
+}
+
+// PATCH con updateMask: solo toca los campos indicados, NO borra el resto del documento
+function fsPatch(pathStr, fields, idToken) {
+  const mask = Object.keys(fields).map(f => `updateMask.fieldPaths=${encodeURIComponent(f)}`).join('&');
+  return httpJson('PATCH', `${FS_BASE}${pathStr}?${mask}`, { fields }, { 'Authorization': `Bearer ${idToken}` });
+}
+
+// Ejecuta una query estructurada (runQuery)
+function fsQuery(structuredQuery, idToken) {
+  return httpJson('POST', `${FS_BASE}:runQuery`, { structuredQuery }, { 'Authorization': `Bearer ${idToken}` });
+}
+
+// ── Conversión de valores Firestore ────────────────────────────────────────────
+const sv = v =>
+  v === null || v === undefined ? { nullValue: null } :
+  typeof v === 'string'  ? { stringValue: v }  :
+  typeof v === 'boolean' ? { booleanValue: v } :
+  typeof v === 'number'  ? (Number.isInteger(v) ? { integerValue: String(v) } : { doubleValue: v }) :
+  { mapValue: { fields: Object.fromEntries(Object.entries(v).map(([k, x]) => [k, sv(x)])) } };
+
+function fromValue(v) {
+  if (!v) return null;
+  if ('stringValue'  in v) return v.stringValue;
+  if ('integerValue' in v) return Number(v.integerValue);
+  if ('doubleValue'  in v) return v.doubleValue;
+  if ('booleanValue' in v) return v.booleanValue;
+  if ('nullValue'    in v) return null;
+  if ('mapValue'     in v) return Object.fromEntries(Object.entries(v.mapValue.fields ?? {}).map(([k, x]) => [k, fromValue(x)]));
+  if ('arrayValue'   in v) return (v.arrayValue.values ?? []).map(fromValue);
+  return null;
+}
 
 function fromDoc(doc) {
   const r = {};
-  for (const [k, v] of Object.entries(doc.fields ?? {}))
-    r[k] = v.stringValue ?? v.integerValue ?? v.booleanValue ?? v.nullValue ?? null;
+  for (const [k, v] of Object.entries(doc.fields ?? {})) r[k] = fromValue(v);
   return r;
 }
 
-// ── Puntos ─────────────────────────────────────────────────────────────────────
+// ── Autenticación ──────────────────────────────────────────────────────────────
+async function getIdToken() {
+  console.log(`🔐 Autenticando como ${ADMIN_EMAIL}...`);
+  const res = await httpJson('POST',
+    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FB_API_KEY}`,
+    { email: ADMIN_EMAIL, password: ADMIN_PASS, returnSecureToken: true });
+  if (!res.idToken) throw new Error('No se obtuvo idToken');
+  console.log('   ✅ Autenticado');
+  return res.idToken;
+}
+
+// ── Puntos (misma lógica que la app) ──────────────────────────────────────────
 function calcPts(ph, pa, ah, aa) {
-  if (ph === ah && pa === aa) return { points: 15, result: 'EXACT' };
+  if (ph === ah && pa === aa)          return { points: 15, result: 'EXACT' };
   const pd = ph - pa, ad = ah - aa;
-  if (pd === ad)                    return { points: 10, result: 'GOAL_DIFF' };
-  if (Math.sign(pd) === Math.sign(ad)) return { points: 5, result: 'TENDENCY' };
+  if (pd === ad)                       return { points: 10, result: 'GOAL_DIFF' };
+  if (Math.sign(pd) === Math.sign(ad)) return { points: 5,  result: 'TENDENCY' };
   return { points: 0, result: 'WRONG' };
 }
 
 // ── Main ───────────────────────────────────────────────────────────────────────
 async function main() {
-  console.log(`🔄 Iniciando sincronización — ${new Date().toISOString()}`);
+  console.log(`🔄 Sync resultados — ${new Date().toISOString()}`);
 
-  // 1. Traer partidos finalizados
-  const api = await get(
-    `https://api.football-data.org/v4/competitions/${COMPETITION_CODE}/matches?status=FINISHED`,
-    { 'X-Auth-Token': FOOTBALL_API_KEY },
-  );
+  const idToken = await getIdToken();
+
+  // 1. Partidos finalizados desde la API
+  const api = await httpGet(
+    `https://api.football-data.org/v4/competitions/${COMPETITION}/matches?status=FINISHED`,
+    { 'X-Auth-Token': FOOTBALL_KEY });
   const finished = api.matches ?? [];
-  console.log(`📡 ${finished.length} partidos finalizados desde la API.`);
+  console.log(`📡 ${finished.length} partidos finalizados en la API`);
 
-  let processed = 0;
+  if (finished.length === 0) { console.log('✅ Nada que procesar.'); return; }
+
+  // 2. Traer TODAS las predicciones una sola vez (runQuery, sin límite de 500)
+  const predRows = await fsQuery({ from: [{ collectionId: 'predictions' }] }, idToken);
+  const allPreds = predRows
+    .filter(r => r.document)
+    .map(r => ({ _id: r.document.name.split('/').pop(), ...fromDoc(r.document) }));
+  console.log(`📋 ${allPreds.length} predicciones en total`);
+
+  const affectedUsers = new Set();
+  let updatedMatches = 0, calculatedPreds = 0;
+
   for (const m of finished) {
-    const home = m.score?.fullTime?.home, away = m.score?.fullTime?.away;
-    if (home === null || away === null || home === undefined || away === undefined) continue;
+    const home = m.score?.fullTime?.home;
+    const away = m.score?.fullTime?.away;
+    if (home == null || away == null) continue;
 
-    console.log(`⚽ ${m.id}: ${m.homeTeam?.tla} ${home}-${away} ${m.awayTeam?.tla}`);
+    // 3. Actualizar el partido (solo status, score y lastUpdated — el resto queda intacto)
+    await fsPatch(`/matches/${m.id}`, {
+      status: sv('FINISHED'),
+      score:  sv({
+        winner:   home > away ? 'HOME_TEAM' : away > home ? 'AWAY_TEAM' : 'DRAW',
+        fullTime: { home, away },
+        halfTime: { home: m.score?.halfTime?.home ?? null, away: m.score?.halfTime?.away ?? null },
+      }),
+      lastUpdated: sv(new Date().toISOString()),
+    }, idToken);
+    updatedMatches++;
 
-    // 2. Actualizar match en Firestore
-    await firestorePatch(`/matches/${m.id}`, {
-      status:              sv('FINISHED'),
-      'score.fullTime.home': sv(home),
-      'score.fullTime.away': sv(away),
-      'score.winner':      sv(home > away ? 'HOME_TEAM' : away > home ? 'AWAY_TEAM' : 'DRAW'),
-      lastUpdated:         sv(new Date().toISOString()),
-    }).catch(e => console.warn(`   ⚠️ match update: ${e.message}`));
-
-    // 3. Predicciones no calculadas de este partido
-    const predsResp = await firestoreGet(`/predictions?pageSize=500`).catch(() => ({ documents: [] }));
-    const preds = (predsResp.documents ?? [])
-      .map(d => ({ id: d.name?.split('/').pop(), ...fromDoc(d) }))
-      .filter(p => String(p.matchId) === String(m.id) && !p.calculated);
-
-    console.log(`   ${preds.length} predicciones a calcular`);
-
-    const users = new Set();
-    for (const p of preds) {
+    // 4. Calcular predicciones pendientes de este partido
+    const pending = allPreds.filter(p => Number(p.matchId) === Number(m.id) && !p.calculated);
+    for (const p of pending) {
       const { points, result } = calcPts(Number(p.predictedHome), Number(p.predictedAway), home, away);
-      await firestorePatch(`/predictions/${p.id}`, {
+      await fsPatch(`/predictions/${p._id}`, {
         points:     sv(points),
         result:     sv(result),
         calculated: sv(true),
         updatedAt:  sv(new Date().toISOString()),
-      }).catch(e => console.warn(`   ⚠️ pred ${p.id}: ${e.message}`));
-      users.add(p.userId);
-      console.log(`   → user ${p.userId}: ${result} (+${points})`);
+      }, idToken);
+      // Actualizar copia local para recalcular totales después
+      p.points = points; p.result = result; p.calculated = true;
+      affectedUsers.add(p.userId);
+      calculatedPreds++;
+      console.log(`   ⚽ ${m.homeTeam?.tla} ${home}-${away} ${m.awayTeam?.tla} → ${p.userId.substring(0, 6)}…: ${result} (+${points})`);
     }
-
-    // 4. Recalcular totales de usuarios
-    for (const uid of users) {
-      const all = await firestoreGet(`/predictions?pageSize=1000`).catch(() => ({ documents: [] }));
-      const up  = (all.documents ?? []).map(d => fromDoc(d)).filter(p => p.userId === uid && p.calculated);
-      await firestorePatch(`/users/${uid}`, {
-        totalPoints:    sv(up.reduce((s, p) => s + Number(p.points), 0)),
-        exactScores:    sv(up.filter(p => p.result === 'EXACT').length),
-        correctWinners: sv(up.filter(p => p.result === 'TENDENCY' || p.result === 'GOAL_DIFF').length),
-        updatedAt:      sv(new Date().toISOString()),
-      }).catch(e => console.warn(`   ⚠️ user ${uid}: ${e.message}`));
-    }
-
-    processed++;
   }
 
-  console.log(`\n✅ Listo. ${processed} partidos procesados.`);
+  // 5. Recalcular totales de los usuarios afectados (una vez cada uno)
+  for (const uid of affectedUsers) {
+    const userPreds = allPreds.filter(p => p.userId === uid && p.calculated);
+    await fsPatch(`/users/${uid}`, {
+      totalPoints:    sv(userPreds.reduce((s, p) => s + Number(p.points ?? 0), 0)),
+      exactScores:    sv(userPreds.filter(p => p.result === 'EXACT').length),
+      correctWinners: sv(userPreds.filter(p => p.result === 'TENDENCY' || p.result === 'GOAL_DIFF').length),
+      updatedAt:      sv(new Date().toISOString()),
+    }, idToken);
+    console.log(`   👤 Totales actualizados: ${uid.substring(0, 6)}…`);
+  }
+
+  console.log(`\n✅ Listo. ${updatedMatches} partidos actualizados, ${calculatedPreds} predicciones calculadas, ${affectedUsers.size} usuarios.`);
 }
 
-main().catch(e => { console.error('❌ Error fatal:', e); process.exit(1); });
+main().catch(e => { console.error('❌ Error fatal:', e.message); process.exit(1); });

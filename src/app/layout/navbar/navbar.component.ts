@@ -10,15 +10,15 @@ import { filter } from 'rxjs/operators';
   imports:    [CommonModule, RouterModule],
   template: `
     <nav class="sticky top-0 z-50 backdrop-blur-md"
-         style="background:rgba(14,6,8,0.95);border-bottom:1px solid rgba(123,31,53,0.4)">
+         style="background:rgba(14,6,8,0.95);border-bottom:1px solid rgba(123,31,53,0.4);padding-top:env(safe-area-inset-top)">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between h-16">
 
           <!-- Logo -->
           <a routerLink="/" class="flex items-center gap-2.5 group">
-            <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden"
                  style="background:linear-gradient(135deg,#7B1F35,#3D0E1C)">
-              <span class="text-base">⚽</span>
+              <img src="assets/trionda.png" alt="Trionda" class="w-full h-full object-contain p-0.5"/>
             </div>
             <span class="text-base font-black text-gold-gradient hidden sm:block"
                   style="background:linear-gradient(135deg,#E2C06A,#C9A843);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
@@ -73,6 +73,10 @@ import { filter } from 'rxjs/operators';
                    class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-300 hover:text-white transition-colors">
                   📋 Reglas
                 </a>
+                <a routerLink="/instalar" (click)="dropdownOpen.set(false)"
+                   class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-300 hover:text-white transition-colors">
+                  📲 Instalar app
+                </a>
                 <div style="border-top:1px solid #2A1219" class="mt-1 pt-1">
                   <button (click)="logout()"
                     class="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-400 hover:text-red-300 text-left transition-colors">
@@ -116,6 +120,7 @@ import { filter } from 'rxjs/operators';
             <a routerLink="/ranking"      (click)="mobileOpen.set(false)" class="mobile-link">🏆 Ranking</a>
             <a routerLink="/perfil"       (click)="mobileOpen.set(false)" class="mobile-link">👤 Mi Perfil</a>
             <a routerLink="/reglas"       (click)="mobileOpen.set(false)" class="mobile-link">📋 Reglas</a>
+            <a routerLink="/instalar"     (click)="mobileOpen.set(false)" class="mobile-link">📲 Instalar app</a>
             <a *ngIf="isAdmin()" routerLink="/admin" (click)="mobileOpen.set(false)"
                class="mobile-link" style="color:#C9A843">⚙️ Admin</a>
             <button (click)="logout()"

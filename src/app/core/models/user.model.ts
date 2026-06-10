@@ -11,6 +11,7 @@ export interface UserProfile {
   createdAt:      Date;
   updatedAt:      Date;
   role:           UserRole;
+  leagues:        string[];  // IDs de ligas a las que pertenece
 }
 
 export type UserRole = 'user' | 'admin';

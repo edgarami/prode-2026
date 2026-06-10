@@ -3,10 +3,16 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
 import { Pipe, PipeTransform } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
+import { Firestore, doc, setDoc, getDocs, collection, updateDoc, arrayUnion } from '@angular/fire/firestore';
 import { MatchService }        from '../../core/services/match.service';
 import { FootballApiService }  from '../../core/services/football-api.service';
 import { PredictionService }   from '../../core/services/prediction.service';
-import { Match, STAGE_LABELS, MatchStage } from '../../core/models';
+import { LeagueService }       from '../../core/services/league.service';
+import { AuthService }         from '../../core/services/auth.service';
+import { environment }         from '../../../environments/environment';
+import { Match, STAGE_LABELS, MatchStage, League } from '../../core/models';
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 import { TeamFlagComponent }       from '../../shared/components/team-flag/team-flag.component';
 import { MatchDatePipe }           from '../../shared/pipes/match-date.pipe';
@@ -34,7 +40,7 @@ export class FinishedCountPipe implements PipeTransform {
       </div>
 
       <!-- Acciones rápidas -->
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-8">
         <div class="rounded-2xl p-5" style="background:#1E0E13;border:1px solid #2A1219">
           <h3 class="font-bold text-white mb-2 flex items-center gap-2"><span class="text-xl">🔄</span> Sincronizar desde API</h3>
           <p class="text-gray-400 text-xs mb-4">Importa todos los partidos desde football-data.org.</p>
@@ -58,7 +64,18 @@ export class FinishedCountPipe implements PipeTransform {
         </div>
 
         <div class="rounded-2xl p-5" style="background:#1E0E13;border:1px solid #2A1219">
-          <h3 class="font-bold text-white mb-2 flex items-center gap-2"><span class="text-xl">📊</span> Estadísticas</h3>
+          <h3 class="font-bold text-white mb-2 flex items-center gap-2"><span class="text-xl">📊</span> Sincronizar Tabla</h3>
+          <p class="text-gray-400 text-xs mb-4">Actualiza las posiciones de los grupos desde la API.</p>
+          <button (click)="syncStandings()" [disabled]="syncingStandings()"
+            class="w-full py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-40"
+            style="border:1px solid #2A1219">
+            {{ syncingStandings() ? 'Sincronizando...' : 'Sync tabla de grupos' }}
+          </button>
+          <p *ngIf="standingsMsg()" class="mt-2 text-xs" [style.color]="standingsErr() ? '#f87171' : '#C9A843'">{{ standingsMsg() }}</p>
+        </div>
+
+        <div class="rounded-2xl p-5" style="background:#1E0E13;border:1px solid #2A1219">
+          <h3 class="font-bold text-white mb-2 flex items-center gap-2"><span class="text-xl">📈</span> Estadísticas</h3>
           <div class="space-y-2">
             <div class="flex justify-between text-sm">
               <span class="text-gray-400">Total partidos</span>
@@ -74,6 +91,94 @@ export class FinishedCountPipe implements PipeTransform {
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- ═══ LIGAS ═══ -->
+      <div class="mb-8 rounded-2xl p-6" style="background:#1E0E13;border:1px solid #2A1219">
+        <div class="flex items-center justify-between mb-5">
+          <h2 class="text-lg font-black text-white flex items-center gap-2">🏆 Ligas privadas</h2>
+          <button (click)="showCreateLeague.set(!showCreateLeague())"
+            class="py-2 px-4 rounded-xl text-sm font-bold transition-all hover:opacity-80"
+            style="background:linear-gradient(135deg,#C9A843,#A8872E);color:#0E0608">
+            + Nueva liga
+          </button>
+        </div>
+
+        <!-- Formulario crear liga -->
+        <div *ngIf="showCreateLeague()" class="mb-5 p-4 rounded-xl" style="background:#150A0D;border:1px solid #2A1219">
+          <p class="text-sm font-bold text-white mb-3">Crear nueva liga</p>
+          <div class="flex gap-2">
+            <input type="text" [(ngModel)]="newLeagueName" placeholder="Nombre de la liga"
+              class="flex-1 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none"
+              style="background:#1E0E13;border:1px solid #2A1219"/>
+            <button (click)="createLeague()" [disabled]="creatingLeague() || !newLeagueName.trim()"
+              class="py-2.5 px-4 rounded-xl text-sm font-bold disabled:opacity-40"
+              style="background:linear-gradient(135deg,#7B1F35,#3D0E1C);color:#fff;border:1px solid rgba(123,31,53,0.5)">
+              {{ creatingLeague() ? '...' : 'Crear' }}
+            </button>
+          </div>
+          <p *ngIf="createLeagueMsg()" class="mt-2 text-xs" [style.color]="createLeagueErr() ? '#f87171' : '#4ade80'">
+            {{ createLeagueMsg() }}
+          </p>
+        </div>
+
+        <!-- Lista de ligas -->
+        <div *ngIf="leagues().length > 0" class="space-y-3">
+          <div *ngFor="let l of leagues()" class="flex items-center gap-4 p-4 rounded-xl"
+               style="background:#150A0D;border:1px solid #2A1219">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <p class="font-bold text-white text-sm">{{ l.name }}</p>
+                <span *ngIf="l.isDefault" class="text-xs px-2 py-0.5 rounded-full"
+                      style="background:rgba(123,31,53,0.3);color:#E2C06A">default</span>
+              </div>
+              <p class="text-xs text-gray-500">{{ l.memberCount }} participantes</p>
+            </div>
+            <!-- Código copiable -->
+            <div class="flex items-center gap-2 shrink-0">
+              <div class="px-3 py-1.5 rounded-lg font-black tracking-widest text-sm cursor-pointer"
+                   style="background:#1E0E13;border:1px solid rgba(201,168,67,0.3);color:#C9A843"
+                   (click)="copyCode(l.code)" [title]="'Click para copiar'">
+                {{ l.code }}
+              </div>
+              <button (click)="copyCode(l.code)"
+                class="text-xs text-gray-500 hover:text-white transition-colors px-2 py-1.5 rounded-lg"
+                style="border:1px solid #2A1219" [title]="copiedCode()===l.code ? '¡Copiado!' : 'Copiar código'">
+                {{ copiedCode()===l.code ? '✓' : '📋' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="leagues().length === 0 && !loadingLeagues()" class="text-center py-6">
+          <p class="text-gray-500 text-sm">No hay ligas creadas aún.</p>
+          <p class="text-gray-600 text-xs mt-1 mb-4">Primero creá la liga general por defecto.</p>
+          <button (click)="createDefaultLeague()"
+            class="py-2.5 px-5 rounded-xl text-sm font-bold hover:opacity-80 transition-all"
+            style="background:linear-gradient(135deg,#7B1F35,#3D0E1C);color:#E2C06A;border:1px solid rgba(123,31,53,0.5)">
+            🏆 Crear liga "Mano tengo fe"
+          </button>
+        </div>
+
+        <!-- Migrar usuarios existentes -->
+        <div *ngIf="leagues().length > 0" class="mt-4 pt-4" style="border-top:1px solid #2A1219">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <p class="text-sm font-semibold text-white">Migrar usuarios existentes</p>
+              <p class="text-xs text-gray-500 mt-0.5">Agrega la liga default a todos los usuarios que aún no pertenecen a ninguna liga.</p>
+            </div>
+            <button (click)="migrateUsers()" [disabled]="migrating()"
+              class="shrink-0 py-2.5 px-4 rounded-xl text-sm font-bold disabled:opacity-40 transition-all hover:opacity-80"
+              style="background:rgba(201,168,67,0.15);color:#C9A843;border:1px solid rgba(201,168,67,0.3)">
+              {{ migrating() ? 'Migrando...' : '⚡ Migrar todos' }}
+            </button>
+          </div>
+          <p *ngIf="migrateMsg()" class="mt-2 text-xs" [style.color]="migrateErr() ? '#f87171' : '#4ade80'">
+            {{ migrateMsg() }}
+          </p>
+        </div>
+
+        <app-loading-spinner *ngIf="loadingLeagues()"></app-loading-spinner>
       </div>
 
       <!-- Lista partidos -->
@@ -183,19 +288,38 @@ export class AdminComponent implements OnInit {
   private matchService       = inject(MatchService);
   private footballApiService = inject(FootballApiService);
   private predictionService  = inject(PredictionService);
+  private leagueService      = inject(LeagueService);
+  private authService        = inject(AuthService);
   private fb                 = inject(FormBuilder);
+  private http               = inject(HttpClient);
+  private firestore          = inject(Firestore);
 
-  matches       = signal<Match[]>([]);
-  loadingMatches= signal(true);
-  syncing       = signal(false);
-  calculating   = signal(false);
-  recalcId      = signal<number | null>(null);
-  syncMsg       = signal(''); syncErr = signal(false);
-  calcMsg       = signal(''); calcErr = signal(false);
-  filter        = '';
-  resultOpen    = signal(false);
-  selMatch      = signal<Match | null>(null);
-  savingResult  = signal(false);
+  matches          = signal<Match[]>([]);
+  loadingMatches   = signal(true);
+  syncing          = signal(false);
+  calculating      = signal(false);
+  syncingStandings = signal(false);
+  recalcId         = signal<number | null>(null);
+  syncMsg          = signal(''); syncErr          = signal(false);
+  calcMsg          = signal(''); calcErr          = signal(false);
+  standingsMsg     = signal(''); standingsErr     = signal(false);
+  filter           = '';
+  resultOpen       = signal(false);
+  selMatch         = signal<Match | null>(null);
+  savingResult     = signal(false);
+
+  // Ligas
+  leagues          = signal<League[]>([]);
+  loadingLeagues   = signal(true);
+  showCreateLeague = signal(false);
+  newLeagueName    = '';
+  creatingLeague   = signal(false);
+  createLeagueMsg  = signal('');
+  createLeagueErr  = signal(false);
+  copiedCode       = signal('');
+  migrating        = signal(false);
+  migrateMsg       = signal('');
+  migrateErr       = signal(false);
 
   resultForm = this.fb.group({
     homeScore:  [0, [Validators.required, Validators.min(0)]],
@@ -203,7 +327,114 @@ export class AdminComponent implements OnInit {
     calcPoints: [true],
   });
 
-  ngOnInit(): void { this.loadMatches(); }
+  ngOnInit(): void {
+    this.loadMatches();
+    this.loadLeagues();
+  }
+
+  private async loadLeagues(): Promise<void> {
+    this.loadingLeagues.set(true);
+    try {
+      const leagues = await this.leagueService.getLeagues();
+      // Ordenar: default primero, luego por nombre
+      leagues.sort((a, b) => {
+        if (a.isDefault && !b.isDefault) return -1;
+        if (!a.isDefault && b.isDefault) return 1;
+        return a.name.localeCompare(b.name);
+      });
+      this.leagues.set(leagues);
+    } finally {
+      this.loadingLeagues.set(false);
+    }
+  }
+
+  async createLeague(): Promise<void> {
+    const name = this.newLeagueName.trim();
+    if (!name) return;
+    const uid = this.authService.currentUser()?.uid;
+    if (!uid) return;
+
+    this.creatingLeague.set(true);
+    this.createLeagueMsg.set('');
+    this.createLeagueErr.set(false);
+    try {
+      const league = await this.leagueService.createLeague(name, uid, false);
+      this.createLeagueMsg.set(`✅ Liga "${league.name}" creada. Código: ${league.code}`);
+      this.newLeagueName = '';
+      await this.loadLeagues();
+    } catch (e: any) {
+      this.createLeagueErr.set(true);
+      this.createLeagueMsg.set(`Error: ${e.message}`);
+    } finally {
+      this.creatingLeague.set(false);
+    }
+  }
+
+  async createDefaultLeague(): Promise<void> {
+    const uid = this.authService.currentUser()?.uid;
+    if (!uid) return;
+    const existing = await this.leagueService.getDefaultLeague();
+    if (existing) {
+      alert(`La liga default ya existe: ${existing.name} (${existing.code})`);
+      return;
+    }
+    await this.leagueService.createLeague('Mano tengo fe', uid, true);
+    await this.loadLeagues();
+  }
+
+  copyCode(code: string): void {
+    navigator.clipboard.writeText(code).then(() => {
+      this.copiedCode.set(code);
+      setTimeout(() => this.copiedCode.set(''), 2000);
+    });
+  }
+
+  async migrateUsers(): Promise<void> {
+    this.migrating.set(true);
+    this.migrateMsg.set('');
+    this.migrateErr.set(false);
+    try {
+      const defaultLeague = await this.leagueService.getDefaultLeague();
+      if (!defaultLeague) {
+        this.migrateErr.set(true);
+        this.migrateMsg.set('No existe la liga default. Creala primero.');
+        return;
+      }
+
+      // Traer todos los usuarios
+      const snap = await getDocs(collection(this.firestore, 'users'));
+      let migrated = 0;
+      let skipped  = 0;
+
+      for (const d of snap.docs) {
+        const leagues: string[] = d.data()['leagues'] ?? [];
+        if (!leagues.includes(defaultLeague.id)) {
+          // Agregar la liga default al usuario
+          await updateDoc(doc(this.firestore, 'users', d.id), {
+            leagues: arrayUnion(defaultLeague.id),
+          });
+          migrated++;
+        } else {
+          skipped++;
+        }
+      }
+
+      // Actualizar memberCount de la liga
+      const leagueRef = doc(this.firestore, 'leagues', defaultLeague.id);
+      await updateDoc(leagueRef, { memberCount: snap.size });
+
+      this.migrateMsg.set(
+        `✅ ${migrated} usuario${migrated !== 1 ? 's' : ''} migrado${migrated !== 1 ? 's' : ''}` +
+        (skipped > 0 ? ` · ${skipped} ya pertenecían` : '')
+      );
+      await this.loadLeagues();
+    } catch (e: any) {
+      this.migrateErr.set(true);
+      this.migrateMsg.set(`Error: ${e.message}`);
+    } finally {
+      this.migrating.set(false);
+    }
+  }
 
   private async loadMatches(): Promise<void> {
     this.loadingMatches.set(true);
@@ -248,6 +479,35 @@ export class AdminComponent implements OnInit {
     this.recalcId.set(m.id);
     await this.predictionService.calculateMatchPredictions(m.id, m.score.fullTime.home!, m.score.fullTime.away!);
     this.recalcId.set(null);
+  }
+
+  private apiBase(path: string): string {
+    const isLocal = window.location.hostname === 'localhost';
+    return isLocal
+      ? `/api/football/v4/competitions/${environment.competitionCode}${path}`
+      : `${environment.footballApiUrl}/competitions/${environment.competitionCode}${path}`;
+  }
+
+  async syncStandings(): Promise<void> {
+    this.syncingStandings.set(true);
+    this.standingsMsg.set(''); this.standingsErr.set(false);
+    try {
+      const headers = new HttpHeaders({ 'X-Auth-Token': environment.footballApiKey });
+      const res = await firstValueFrom(
+        this.http.get<any>(this.apiBase('/standings'), { headers })
+      );
+      const groups = (res.standings ?? [])
+        .filter((s: any) => s.group && s.type === 'TOTAL');
+      // Guardar en Firestore como un único documento
+      await setDoc(doc(this.firestore, 'standings', 'groups'), {
+        groups,
+        updatedAt: new Date().toISOString(),
+      });
+      this.standingsMsg.set(`✅ ${groups.length} grupos sincronizados.`);
+    } catch (e: any) {
+      this.standingsErr.set(true);
+      this.standingsMsg.set(`Error: ${e.message}`);
+    } finally { this.syncingStandings.set(false); }
   }
 
   openResult(m: Match): void {

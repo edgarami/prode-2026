@@ -1,11 +1,12 @@
-import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators, FormsModule } from '@angular/forms';
 import { AuthService }        from '../../core/services/auth.service';
 import { UserService }        from '../../core/services/user.service';
 import { PredictionService }  from '../../core/services/prediction.service';
 import { MatchService }       from '../../core/services/match.service';
-import { Prediction, Match, STAGE_LABELS } from '../../core/models';
+import { LeagueService }      from '../../core/services/league.service';
+import { Prediction, Match, STAGE_LABELS, League } from '../../core/models';
 import { ScoreBadgeComponent }      from '../../shared/components/score-badge/score-badge.component';
 import { TeamFlagComponent }        from '../../shared/components/team-flag/team-flag.component';
 import { LoadingSpinnerComponent }  from '../../shared/components/loading-spinner/loading-spinner.component';
@@ -17,7 +18,7 @@ interface PredWithMatch { prediction: Prediction; match: Match | null; }
   selector:        'app-profile',
   standalone:      true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule, ScoreBadgeComponent, TeamFlagComponent, LoadingSpinnerComponent, MatchDatePipe],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, ScoreBadgeComponent, TeamFlagComponent, LoadingSpinnerComponent, MatchDatePipe],
   template: `
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
@@ -86,6 +87,74 @@ interface PredWithMatch { prediction: Prediction; match: Match | null; }
         </div>
       </div>
 
+      <!-- ═══ MIS LIGAS ═══ -->
+      <div class="rounded-2xl p-6 mb-8" style="background:#1E0E13;border:1px solid #2A1219">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-black text-white flex items-center gap-2">
+            🏆 Mis Ligas
+          </h2>
+          <button (click)="showJoinLeague.set(!showJoinLeague())"
+            class="py-1.5 px-3 rounded-lg text-xs font-bold transition-all hover:opacity-80"
+            style="background:linear-gradient(135deg,#C9A843,#A8872E);color:#0E0608">
+            + Unirse a liga
+          </button>
+        </div>
+
+        <!-- Formulario unirse con código -->
+        <div *ngIf="showJoinLeague()" class="mb-4 p-4 rounded-xl" style="background:#150A0D;border:1px solid #2A1219">
+          <p class="text-sm text-gray-300 font-semibold mb-3">Ingresá el código de invitación</p>
+          <div class="flex gap-2">
+            <input type="text" [(ngModel)]="joinCode" placeholder="Ej: MANO2026"
+              (input)="onJoinCodeInput()"
+              class="flex-1 rounded-xl px-4 py-2.5 text-white text-sm placeholder-gray-500 focus:outline-none uppercase tracking-widest font-bold"
+              style="background:#1E0E13;border:1px solid #2A1219"/>
+            <button (click)="joinLeague()" [disabled]="joiningLeague() || !joinResolvedLeague()"
+              class="py-2.5 px-4 rounded-xl text-sm font-bold disabled:opacity-40 transition-all"
+              style="background:linear-gradient(135deg,#7B1F35,#3D0E1C);color:#fff;border:1px solid rgba(123,31,53,0.5)">
+              {{ joiningLeague() ? '...' : 'Unirse' }}
+            </button>
+          </div>
+          <div *ngIf="joinResolvedLeague()" class="mt-2 flex items-center gap-2 text-xs" style="color:#C9A843">
+            <span>✓</span> <span class="font-semibold">{{ joinResolvedLeague()!.name }}</span>
+          </div>
+          <p *ngIf="joinCodeInvalid()" class="mt-2 text-xs text-red-400">Código no encontrado.</p>
+          <p *ngIf="joinSuccess()" class="mt-2 text-xs text-green-400">✓ Te uniste a la liga correctamente.</p>
+          <p *ngIf="alreadyMember()" class="mt-2 text-xs text-yellow-400">Ya sos miembro de esta liga.</p>
+        </div>
+
+        <!-- Lista de ligas -->
+        <div *ngIf="userLeagues().length > 0" class="space-y-2">
+          <div *ngFor="let l of userLeagues()"
+               class="flex items-center justify-between px-4 py-3 rounded-xl"
+               style="background:#150A0D;border:1px solid #2A1219">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-lg flex items-center justify-center text-base"
+                   [style.background]="l.isDefault ? 'linear-gradient(135deg,rgba(123,31,53,0.4),rgba(61,14,28,0.3))' : 'rgba(201,168,67,0.1)'">
+                🏆
+              </div>
+              <div>
+                <p class="font-bold text-white text-sm">{{ l.name }}</p>
+                <p class="text-xs text-gray-500">{{ l.memberCount }} participantes</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <span *ngIf="l.isDefault" class="text-xs text-gray-500 px-2 py-1 rounded-lg" style="background:#1E0E13">general</span>
+              <button *ngIf="!l.isDefault" (click)="leaveLeague(l)"
+                class="text-xs text-gray-500 hover:text-red-400 transition-colors px-2 py-1 rounded-lg"
+                style="border:1px solid #2A1219">
+                Salir
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="userLeagues().length === 0 && !loadingLeagues()" class="text-center py-6">
+          <p class="text-gray-500 text-sm">Todavía no estás en ninguna liga.</p>
+        </div>
+
+        <app-loading-spinner *ngIf="loadingLeagues()"></app-loading-spinner>
+      </div>
+
       <!-- Historial de predicciones -->
       <div>
         <h2 class="text-xl font-black text-white mb-4">Historial de predicciones</h2>
@@ -144,7 +213,9 @@ export class ProfileComponent implements OnInit {
   private userService       = inject(UserService);
   private predictionService = inject(PredictionService);
   private matchService      = inject(MatchService);
+  private leagueService     = inject(LeagueService);
   private fb                = inject(FormBuilder);
+  private cdr               = inject(ChangeDetectorRef);
 
   userProfile  = this.auth.userProfile;
   editMode     = signal(false);
@@ -152,6 +223,18 @@ export class ProfileComponent implements OnInit {
   loadingPreds = signal(true);
   activeFilter = signal('ALL');
   allItems     = signal<PredWithMatch[]>([]);
+
+  // Ligas
+  userLeagues      = signal<League[]>([]);
+  loadingLeagues   = signal(true);
+  showJoinLeague   = signal(false);
+  joinCode         = '';
+  joinResolvedLeague = signal<League | null>(null);
+  joinCodeInvalid  = signal(false);
+  joiningLeague    = signal(false);
+  joinSuccess      = signal(false);
+  alreadyMember    = signal(false);
+  private joinTimer: any = null;
 
   filters = [
     {l:'Todas', v:'ALL'}, {l:'🎯 Exactas',v:'EXACT'}, {l:'✓ Dif.',v:'GOAL_DIFF'},
@@ -163,7 +246,73 @@ export class ProfileComponent implements OnInit {
     country:     [this.userProfile()?.country ?? 'Argentina'],
   });
 
-  ngOnInit(): void { this.loadPreds(); }
+  ngOnInit(): void {
+    this.loadPreds();
+    this.loadLeagues();
+  }
+
+  private async loadLeagues(): Promise<void> {
+    const profile = this.auth.userProfile();
+    this.loadingLeagues.set(true);
+    try {
+      const ids    = profile?.leagues ?? [];
+      const leagues = await this.leagueService.getUserLeagues(ids);
+      this.userLeagues.set(leagues);
+    } finally {
+      this.loadingLeagues.set(false);
+      this.cdr.markForCheck();
+    }
+  }
+
+  onJoinCodeInput(): void {
+    this.joinResolvedLeague.set(null);
+    this.joinCodeInvalid.set(false);
+    this.joinSuccess.set(false);
+    this.alreadyMember.set(false);
+    clearTimeout(this.joinTimer);
+    const code = this.joinCode.trim();
+    if (!code) return;
+
+    this.joinTimer = setTimeout(async () => {
+      const league = await this.leagueService.getLeagueByCode(code);
+      if (league) {
+        this.joinResolvedLeague.set(league);
+      } else {
+        this.joinCodeInvalid.set(true);
+      }
+      this.cdr.markForCheck();
+    }, 600);
+  }
+
+  async joinLeague(): Promise<void> {
+    const league = this.joinResolvedLeague();
+    const uid    = this.auth.currentUser()?.uid;
+    if (!league || !uid) return;
+
+    const already = this.userLeagues().some(l => l.id === league.id);
+    if (already) { this.alreadyMember.set(true); return; }
+
+    this.joiningLeague.set(true);
+    try {
+      await this.leagueService.joinLeague(uid, league.id);
+      this.auth.refreshProfile();
+      await this.loadLeagues();
+      this.joinSuccess.set(true);
+      this.joinCode = '';
+      this.joinResolvedLeague.set(null);
+    } finally {
+      this.joiningLeague.set(false);
+      this.cdr.markForCheck();
+    }
+  }
+
+  async leaveLeague(league: League): Promise<void> {
+    const uid = this.auth.currentUser()?.uid;
+    if (!uid) return;
+    await this.leagueService.leaveLeague(uid, league.id);
+    this.auth.refreshProfile();
+    await this.loadLeagues();
+  }
 
   private async loadPreds(): Promise<void> {
     const uid = this.auth.currentUser()?.uid;

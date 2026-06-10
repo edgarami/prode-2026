@@ -16,13 +16,14 @@ export class UserService {
     return this.mapDoc(snap.id, snap.data());
   }
 
-  async createUserProfile(user: User, displayName: string): Promise<UserProfile> {
+  async createUserProfile(user: User, displayName: string, leagueIds: string[] = []): Promise<UserProfile> {
     const now  = new Date().toISOString();
     const data = {
       uid: user.uid, displayName, email: user.email ?? '',
       photoURL: user.photoURL ?? null, country: 'Argentina',
       totalPoints: 0, exactScores: 0, correctWinners: 0, rank: 0,
       role: 'user' as UserRole, createdAt: now, updatedAt: now,
+      leagues: leagueIds,
     };
     await setDoc(doc(this.firestore, 'users', user.uid), data);
     return { ...data, createdAt: new Date(now), updatedAt: new Date(now) };
@@ -51,6 +52,7 @@ export class UserService {
       totalPoints: d['totalPoints'] ?? 0, exactScores: d['exactScores'] ?? 0,
       correctWinners: d['correctWinners'] ?? 0, rank: d['rank'] ?? 0,
       role: d['role'] ?? 'user',
+      leagues: d['leagues'] ?? [],
       createdAt: new Date(d['createdAt']), updatedAt: new Date(d['updatedAt']),
     };
   }

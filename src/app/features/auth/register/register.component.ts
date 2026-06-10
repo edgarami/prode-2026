@@ -1,8 +1,10 @@
-import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { AuthService } from '../../../core/services/auth.service';
+import { AuthService }   from '../../../core/services/auth.service';
+import { LeagueService } from '../../../core/services/league.service';
+import { League } from '../../../core/models';
 
 function passwordsMatch(ctrl: AbstractControl): ValidationErrors | null {
   return ctrl.get('password')?.value === ctrl.get('confirmPassword')?.value ? null : { mismatch: true };
@@ -32,9 +34,9 @@ function passwordsMatch(ctrl: AbstractControl): ValidationErrors | null {
 
         <div class="relative z-10 h-full flex flex-col justify-end p-6 lg:p-10 pb-8 lg:pb-12">
           <div class="flex items-center gap-2.5 mb-3">
-            <div class="w-8 h-8 rounded-lg flex items-center justify-center"
+            <div class="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden"
                  style="background:linear-gradient(135deg,#7B1F35,#3D0E1C)">
-              <span class="text-sm">⚽</span>
+              <img src="assets/trionda.png" alt="Trionda" class="w-full h-full object-contain p-0.5"/>
             </div>
             <span class="font-black text-base"
                   style="background:linear-gradient(135deg,#E2C06A,#C9A843);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
@@ -42,8 +44,8 @@ function passwordsMatch(ctrl: AbstractControl): ValidationErrors | null {
             </span>
           </div>
           <h2 class="text-2xl lg:text-3xl font-black text-white leading-tight mb-2">
-            Unite a la quiniela<br/>
-            <span style="color:#C9A843">más grande del Mundial.</span>
+            Tu momento ha llegado.<br/>
+            <span style="color:#C9A843">El de Venezuela todavía no.</span>
           </h2>
           <p class="text-gray-400 text-sm">Predecí los 104 partidos del Mundial 2026.</p>
         </div>
@@ -115,6 +117,40 @@ function passwordsMatch(ctrl: AbstractControl): ValidationErrors | null {
                  class="mt-1 text-xs text-red-400">Las contraseñas no coinciden.</p>
             </div>
 
+            <!-- Código de liga (opcional) -->
+            <div>
+              <label class="block text-sm font-semibold text-gray-300 mb-2">
+                Código de liga
+                <span class="font-normal text-gray-500 ml-1">(opcional)</span>
+              </label>
+              <div class="relative">
+                <input type="text" formControlName="leagueCode"
+                  class="w-full rounded-xl px-4 py-3 pr-10 text-white text-sm placeholder-gray-500 focus:outline-none transition-all uppercase tracking-widest font-bold"
+                  style="background:#1E0E13;border:1px solid #2A1219"
+                  placeholder="Ej: MANO2026"
+                  (input)="onCodeInput()"
+                  onfocus="this.style.borderColor='#C9A843'" onblur="this.style.borderColor='#2A1219'"/>
+                <!-- Estado de validación del código -->
+                <div class="absolute right-3.5 top-1/2 -translate-y-1/2">
+                  <span *ngIf="validatingCode()" class="text-gray-400 text-xs">⏳</span>
+                  <span *ngIf="!validatingCode() && resolvedLeague()" class="text-green-400">✓</span>
+                  <span *ngIf="!validatingCode() && codeInvalid()" class="text-red-400">✗</span>
+                </div>
+              </div>
+              <!-- Liga resuelta -->
+              <div *ngIf="resolvedLeague()" class="mt-2 px-3 py-2 rounded-lg flex items-center gap-2"
+                   style="background:rgba(201,168,67,0.1);border:1px solid rgba(201,168,67,0.2)">
+                <span class="text-sm">🏆</span>
+                <span class="text-xs font-semibold" style="color:#C9A843">{{ resolvedLeague()!.name }}</span>
+              </div>
+              <p *ngIf="codeInvalid()" class="mt-1 text-xs text-red-400">
+                Código inválido. Pedíle el código al administrador de tu liga.
+              </p>
+              <p *ngIf="!resolvedLeague() && !codeInvalid() && !form.get('leagueCode')?.value" class="mt-1 text-xs text-gray-500">
+                Si no tenés código, te unimos a "Mano tengo fe" por defecto.
+              </p>
+            </div>
+
             <label class="flex items-start gap-3 cursor-pointer pt-1">
               <input type="checkbox" formControlName="terms"
                 class="w-4 h-4 rounded mt-0.5 shrink-0 cursor-pointer"
@@ -126,7 +162,7 @@ function passwordsMatch(ctrl: AbstractControl): ValidationErrors | null {
             <p *ngIf="form.get('terms')?.invalid && form.get('terms')?.touched"
                class="text-xs text-red-400">Debés aceptar las reglas.</p>
 
-            <button type="submit" [disabled]="loading() || form.invalid"
+            <button type="submit" [disabled]="loading() || form.invalid || validatingCode() || codeInvalid()"
               class="w-full py-3.5 px-6 rounded-xl font-black uppercase tracking-wider text-sm transition-all hover:scale-[1.02] disabled:opacity-40 disabled:cursor-not-allowed mt-1"
               style="background:linear-gradient(135deg,#C9A843,#A8872E);color:#0E0608;box-shadow:0 0 20px rgba(201,168,67,0.25)">
               {{ loading() ? 'Creando cuenta...' : 'CREAR MI CUENTA' }}
@@ -169,40 +205,93 @@ function passwordsMatch(ctrl: AbstractControl): ValidationErrors | null {
   `,
 })
 export class RegisterComponent {
-  private fb   = inject(FormBuilder);
-  private auth = inject(AuthService);
+  private fb            = inject(FormBuilder);
+  private auth          = inject(AuthService);
+  private leagueService = inject(LeagueService);
+  private cdr           = inject(ChangeDetectorRef);
 
-  loading = signal(false);
-  error   = signal('');
-  showPwd = signal(false);
+  loading        = signal(false);
+  error          = signal('');
+  showPwd        = signal(false);
+  validatingCode = signal(false);
+  resolvedLeague = signal<League | null>(null);
+  codeInvalid    = signal(false);
+
+  private codeTimer: any = null;
 
   form = this.fb.group({
     displayName:     ['', [Validators.required, Validators.minLength(2), Validators.maxLength(30)]],
     email:           ['', [Validators.required, Validators.email]],
     password:        ['', [Validators.required, Validators.minLength(6)]],
     confirmPassword: ['', Validators.required],
+    leagueCode:      [''],
     terms:           [false, Validators.requiredTrue],
   }, { validators: passwordsMatch });
 
+  onCodeInput(): void {
+    const code = (this.form.get('leagueCode')?.value ?? '').trim();
+    this.resolvedLeague.set(null);
+    this.codeInvalid.set(false);
+    clearTimeout(this.codeTimer);
+
+    if (!code) return;
+
+    this.validatingCode.set(true);
+    this.cdr.markForCheck();
+
+    this.codeTimer = setTimeout(async () => {
+      try {
+        const league = await this.leagueService.getLeagueByCode(code);
+        if (league) {
+          this.resolvedLeague.set(league);
+          this.codeInvalid.set(false);
+        } else {
+          this.codeInvalid.set(true);
+        }
+      } catch {
+        this.codeInvalid.set(true);
+      } finally {
+        this.validatingCode.set(false);
+        this.cdr.markForCheck();
+      }
+    }, 600);
+  }
+
   async onSubmit(): Promise<void> {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+    if (this.codeInvalid()) return;
+
     this.loading.set(true); this.error.set('');
     try {
+      // Solo se une a la liga si ingresó un código válido
+      const resolved   = this.resolvedLeague();
+      const leagueIds  = resolved ? [resolved.id] : [];
+
       await this.auth.registerWithEmail(
         this.form.value.email!,
         this.form.value.password!,
         this.form.value.displayName!,
+        leagueIds,
       );
+
+      // Actualizar memberCount si se unió a alguna liga
+      const uid = this.auth.currentUser()?.uid;
+      if (uid && resolved) {
+        await this.leagueService.joinLeague(uid, resolved.id);
+      }
     } catch (e: any) {
       this.error.set(this.mapErr(e.code));
-    } finally { this.loading.set(false); }
+    } finally {
+      this.loading.set(false);
+      this.cdr.markForCheck();
+    }
   }
 
   async googleRegister(): Promise<void> {
     this.loading.set(true);
     try { await this.auth.loginWithGoogle(); }
     catch { this.error.set('No se pudo registrar con Google.'); }
-    finally { this.loading.set(false); }
+    finally { this.loading.set(false); this.cdr.markForCheck(); }
   }
 
   private mapErr(code: string): string {

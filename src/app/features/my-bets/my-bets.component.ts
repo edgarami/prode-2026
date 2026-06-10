@@ -22,18 +22,45 @@ interface StageGroup    { label: string; stage: MatchStage; items: MatchWithPred
             LoadingSpinnerComponent, EmptyStateComponent, MatchDatePipe],
   template: `
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div class="mb-8">
-        <h1 class="text-3xl font-black text-white">Mis Apuestas</h1>
-        <p class="text-gray-400 mt-1 text-sm">
-          Predecí los resultados y escalá en el ranking.
-          Tenés hasta <span style="color:#C9A843" class="font-semibold">30 minutos antes</span> de cada partido.
-        </p>
+      <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 class="text-3xl font-black text-white">Mis Apuestas</h1>
+          <p class="text-gray-400 mt-1 text-sm">
+            Predecí los resultados y escalá en el ranking.
+            Tenés hasta <span style="color:#C9A843" class="font-semibold">30 minutos antes</span> de cada partido.
+          </p>
+        </div>
+        <button *ngIf="countFor('OPEN') > 0" (click)="goToNextPending()"
+          class="self-start sm:self-auto shrink-0 py-2.5 px-4 rounded-xl text-sm font-bold flex items-center gap-2 transition-all hover:scale-[1.02]"
+          style="background:linear-gradient(135deg,#7B1F35,#3D0E1C);color:#E2C06A;border:1px solid rgba(201,168,67,0.35)">
+          🎯 Próximo sin apostar
+        </button>
       </div>
 
       <app-loading-spinner *ngIf="loading()"></app-loading-spinner>
 
       <div *ngIf="!loading()">
-        <div *ngFor="let group of stageGroups()" class="mb-10">
+
+        <!-- Filtros -->
+        <div class="sticky top-16 z-30 -mx-4 px-4 py-3 mb-6"
+             style="background:rgba(14,6,8,0.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)">
+          <div class="flex gap-2 overflow-x-auto pb-1" style="scrollbar-width:none">
+            <button *ngFor="let f of filters" (click)="activeFilter.set(f.value)"
+              class="shrink-0 px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
+              [style.background]="activeFilter()===f.value ? 'linear-gradient(135deg,#C9A843,#A8872E)' : '#1E0E13'"
+              [style.color]="activeFilter()===f.value ? '#0E0608' : '#9ca3af'"
+              [style.border]="activeFilter()===f.value ? 'none' : '1px solid #2A1219'">
+              {{ f.icon }} {{ f.label }}
+              <span class="px-1.5 py-0.5 rounded-full text-[10px] font-black"
+                [style.background]="activeFilter()===f.value ? 'rgba(14,6,8,0.25)' : '#2A1219'"
+                [style.color]="activeFilter()===f.value ? '#0E0608' : '#C9A843'">
+                {{ countFor(f.value) }}
+              </span>
+            </button>
+          </div>
+        </div>
+
+        <div *ngFor="let group of filteredGroups()" class="mb-10">
           <div class="flex items-center gap-3 mb-4">
             <div class="w-1 h-6 rounded-full" style="background:#C9A843"></div>
             <h2 class="text-sm font-black text-white uppercase tracking-wider">{{ group.label }}</h2>
@@ -51,6 +78,7 @@ interface StageGroup    { label: string; stage: MatchStage; items: MatchWithPred
 
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div *ngFor="let item of group.items"
+              [id]="'match-' + item.match.id"
               class="rounded-2xl p-4 transition-all"
               [style.opacity]="isKnockoutLocked(group.stage) ? '0.5' : '1'"
               style="background:#1E0E13;border:1px solid #2A1219">
@@ -134,6 +162,11 @@ interface StageGroup    { label: string; stage: MatchStage; items: MatchWithPred
           icon="📅" title="No hay partidos cargados"
           description="Los partidos del Mundial 2026 aparecerán aquí.">
         </app-empty-state>
+
+        <app-empty-state *ngIf="stageGroups().length>0 && filteredGroups().length===0"
+          icon="✅" title="Nada por aquí"
+          description="No hay partidos en esta categoría.">
+        </app-empty-state>
       </div>
     </div>
 
@@ -211,6 +244,14 @@ export class MyBetsComponent implements OnInit {
   predAway     = signal(0);
   saving       = signal(false);
   modalError   = signal('');
+  activeFilter = signal<'OPEN' | 'PREDICTED' | 'PLAYED' | 'ALL'>('OPEN');
+
+  filters = [
+    { value: 'OPEN'      as const, label: 'Por apostar', icon: '🎯' },
+    { value: 'PREDICTED' as const, label: 'Apostados',   icon: '✅' },
+    { value: 'PLAYED'    as const, label: 'Jugados',     icon: '🏁' },
+    { value: 'ALL'       as const, label: 'Todos',       icon: '📋' },
+  ];
 
   ngOnInit(): void { this.load(); }
 
@@ -231,6 +272,46 @@ export class MyBetsComponent implements OnInit {
         .filter(g => g.items.length > 0);
       this.stageGroups.set(groups);
     } finally { this.loading.set(false); }
+  }
+
+  // ── Filtros ────────────────────────────────────────────────────────────────
+  private matchesFilter(item: MatchWithPred, f: 'OPEN' | 'PREDICTED' | 'PLAYED' | 'ALL'): boolean {
+    switch (f) {
+      case 'OPEN':      return !item.prediction && this.matchService.canPredict(item.match);
+      case 'PREDICTED': return !!item.prediction && item.match.status !== 'FINISHED';
+      case 'PLAYED':    return item.match.status === 'FINISHED';
+      case 'ALL':       return true;
+    }
+  }
+
+  countFor(f: 'OPEN' | 'PREDICTED' | 'PLAYED' | 'ALL'): number {
+    return this.stageGroups().reduce(
+      (sum, g) => sum + g.items.filter(i => this.matchesFilter(i, f)).length, 0);
+  }
+
+  filteredGroups(): StageGroup[] {
+    const f = this.activeFilter();
+    return this.stageGroups()
+      .map(g => ({ ...g, items: g.items.filter(i => this.matchesFilter(i, f)) }))
+      .filter(g => g.items.length > 0);
+  }
+
+  goToNextPending(): void {
+    // Primer partido por apostar (los grupos ya vienen ordenados por fecha)
+    for (const g of this.stageGroups()) {
+      const pending = g.items.find(i => this.matchesFilter(i, 'OPEN'));
+      if (pending) {
+        // Si el filtro activo lo oculta, cambiar a "Por apostar"
+        if (this.activeFilter() !== 'OPEN' && this.activeFilter() !== 'ALL') {
+          this.activeFilter.set('OPEN');
+        }
+        setTimeout(() => {
+          document.getElementById(`match-${pending.match.id}`)
+            ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+        return;
+      }
+    }
   }
 
   isKnockoutLocked(stage: MatchStage): boolean {
