@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, signal, OnInit, ChangeDetectionStrategy, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService }        from '../../core/services/auth.service';
@@ -10,6 +10,7 @@ import { ScoreBadgeComponent }     from '../../shared/components/score-badge/sco
 import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner/loading-spinner.component';
 import { EmptyStateComponent }     from '../../shared/components/empty-state/empty-state.component';
 import { MatchDatePipe }           from '../../shared/pipes/match-date.pipe';
+import { ConfettiComponent }       from '../../shared/components/confetti/confetti.component';
 
 interface MatchWithPred { match: Match; prediction: Prediction | null; }
 interface StageGroup    { label: string; stage: MatchStage; items: MatchWithPred[]; }
@@ -19,8 +20,9 @@ interface StageGroup    { label: string; stage: MatchStage; items: MatchWithPred
   standalone:      true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, RouterModule, TeamFlagComponent, ScoreBadgeComponent,
-            LoadingSpinnerComponent, EmptyStateComponent, MatchDatePipe],
+            LoadingSpinnerComponent, EmptyStateComponent, MatchDatePipe, ConfettiComponent],
   template: `
+    <app-confetti #confetti></app-confetti>
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
@@ -236,6 +238,8 @@ export class MyBetsComponent implements OnInit {
   readonly matchService     = inject(MatchService);
   private predictionService = inject(PredictionService);
 
+  @ViewChild('confetti') confetti?: ConfettiComponent;
+
   loading      = signal(true);
   stageGroups  = signal<StageGroup[]>([]);
   modalOpen    = signal(false);
@@ -253,7 +257,15 @@ export class MyBetsComponent implements OnInit {
     { value: 'ALL'       as const, label: 'Todos',       icon: '📋' },
   ];
 
-  ngOnInit(): void { this.load(); }
+  ngOnInit(): void {
+    this.load();
+    // Modo prueba: /mis-apuestas?testConfetti=1
+    if (new URLSearchParams(window.location.search).has('testConfetti')) {
+      setTimeout(() => this.confetti?.celebrate({
+        icon: '🎯', title: '¡Marcador exacto!', message: '1 exacto · +15 puntos',
+      }), 600);
+    }
+  }
 
   private async load(): Promise<void> {
     this.loading.set(true);
@@ -271,7 +283,45 @@ export class MyBetsComponent implements OnInit {
         .map(stage => ({ label: STAGE_LABELS[stage], stage, items: items.filter(i => i.match.stage === stage) }))
         .filter(g => g.items.length > 0);
       this.stageGroups.set(groups);
+      this.checkForNewHits(items);
     } finally { this.loading.set(false); }
+  }
+
+  // ── Festejo por aciertos nuevos ────────────────────────────────────────────
+  private checkForNewHits(items: MatchWithPred[]): void {
+    const KEY = 'celebrated-predictions';
+    const celebrated: string[] = JSON.parse(localStorage.getItem(KEY) ?? '[]');
+
+    const newHits = items.filter(i =>
+      i.prediction?.calculated &&
+      (i.prediction.result === 'EXACT' || i.prediction.result === 'GOAL_DIFF') &&
+      !celebrated.includes(i.prediction.id)
+    );
+
+    if (newHits.length === 0) return;
+
+    // Marcar como festejados (aunque el usuario cierre rápido, no repetir)
+    localStorage.setItem(KEY, JSON.stringify([
+      ...celebrated, ...newHits.map(i => i.prediction!.id),
+    ]));
+
+    const exacts = newHits.filter(i => i.prediction!.result === 'EXACT').length;
+    const diffs  = newHits.length - exacts;
+    const points = newHits.reduce((s, i) => s + i.prediction!.points, 0);
+
+    const title = newHits.length === 1
+      ? (exacts > 0 ? '¡Marcador exacto!' : '¡Acertaste ganador y diferencia!')
+      : `¡${newHits.length} aciertos nuevos!`;
+
+    const parts: string[] = [];
+    if (exacts > 0) parts.push(`${exacts} exacto${exacts > 1 ? 's' : ''}`);
+    if (diffs > 0)  parts.push(`${diffs} con diferencia`);
+
+    setTimeout(() => this.confetti?.celebrate({
+      icon:    exacts > 0 ? '🎯' : '🔥',
+      title,
+      message: `${parts.join(' y ')} · +${points} puntos`,
+    }), 400);
   }
 
   // ── Filtros ────────────────────────────────────────────────────────────────
