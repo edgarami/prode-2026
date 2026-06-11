@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 🔄 Ejecutar sincronización
+      - name: 🔄 Sincronizar resultados y calcular puntos
         env:
           FOOTBALL_API_KEY:    ${{ secrets.FOOTBALL_API_KEY }}
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
@@ -28,6 +28,16 @@ jobs:
           ADMIN_EMAIL:         ${{ secrets.ADMIN_EMAIL }}
           ADMIN_PASSWORD:      ${{ secrets.ADMIN_PASSWORD }}
         run: node scripts/sync-results.js
+
+      - name: 📊 Sincronizar tabla de posiciones
+        if: always()    # corre aunque falle el paso anterior
+        env:
+          FOOTBALL_API_KEY:    ${{ secrets.FOOTBALL_API_KEY }}
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_API_KEY:    ${{ secrets.FIREBASE_API_KEY }}
+          ADMIN_EMAIL:         ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASSWORD:      ${{ secrets.ADMIN_PASSWORD }}
+        run: node scripts/sync-firestore.js --standings
 
       - name: 📊 Resumen
         if: always()
