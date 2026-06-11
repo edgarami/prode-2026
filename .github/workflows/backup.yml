@@ -1,0 +1,36 @@
+name: 💾 Backup Firestore
+
+on:
+  schedule:
+    - cron: '0 5 * * *'      # todos los días a las 5:00 UTC (~2 AM Argentina)
+  workflow_dispatch:          # ejecución manual desde GitHub
+
+jobs:
+  backup:
+    name: Respaldar colecciones a JSON
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 💾 Ejecutar backup
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
+          FIREBASE_API_KEY:    ${{ secrets.FIREBASE_API_KEY }}
+          ADMIN_EMAIL:         ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASSWORD:      ${{ secrets.ADMIN_PASSWORD }}
+        run: node scripts/backup-firestore.js
+
+      - name: ⬆️ Guardar backup como artefacto
+        uses: actions/upload-artifact@v4
+        with:
+          name: firestore-backup-${{ github.run_number }}
+          path: backups/
+          retention-days: 90
