@@ -1,6 +1,7 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { RankingService }          from '../../core/services/ranking.service';
 import { AuthService }             from '../../core/services/auth.service';
 import { LeagueService }           from '../../core/services/league.service';
@@ -11,7 +12,7 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
   selector:        'app-ranking',
   standalone:      true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, LoadingSpinnerComponent],
+  imports: [CommonModule, FormsModule, RouterModule, LoadingSpinnerComponent],
   template: `
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
@@ -44,6 +45,18 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
           <span *ngIf="l.isDefault" class="ml-1 text-xs opacity-60">(general)</span>
         </button>
       </div>
+
+      <!-- Acceso a pronósticos -->
+      <a routerLink="/pronosticos"
+         class="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:opacity-90"
+         style="background:linear-gradient(135deg,rgba(123,31,53,0.3),rgba(30,14,19,0.6));border:1px solid rgba(201,168,67,0.25)">
+        <span class="text-xl">👀</span>
+        <div class="flex-1">
+          <p class="text-white font-bold text-sm">Ver pronósticos de todos</p>
+          <p class="text-gray-400 text-xs">Mirá qué apostó cada uno en los partidos que ya arrancaron.</p>
+        </div>
+        <span style="color:#C9A843" class="text-sm font-bold">→</span>
+      </a>
 
       <!-- Liga activa badge -->
       <div *ngIf="activeLeague()" class="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl"

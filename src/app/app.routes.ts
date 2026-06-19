@@ -61,6 +61,11 @@ export const routes: Routes = [
           import('./features/standings/standings.component').then(m => m.StandingsComponent),
       },
       {
+        path: 'pronosticos',
+        loadComponent: () =>
+          import('./features/predictions-feed/predictions-feed.component').then(m => m.PredictionsFeedComponent),
+      },
+      {
         path: 'instalar',
         loadComponent: () =>
           import('./features/install/install.component').then(m => m.InstallComponent),

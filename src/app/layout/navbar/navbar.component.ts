@@ -73,6 +73,10 @@ import { filter } from 'rxjs/operators';
                    class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-300 hover:text-white transition-colors">
                   📋 Reglas
                 </a>
+                <a routerLink="/pronosticos" (click)="dropdownOpen.set(false)"
+                   class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-300 hover:text-white transition-colors">
+                  👀 Pronósticos
+                </a>
                 <a routerLink="/instalar" (click)="dropdownOpen.set(false)"
                    class="flex items-center gap-2 px-4 py-2.5 text-sm text-gray-300 hover:text-white transition-colors">
                   📲 Instalar app
@@ -120,6 +124,7 @@ import { filter } from 'rxjs/operators';
             <a routerLink="/ranking"      (click)="mobileOpen.set(false)" class="mobile-link">🏆 Ranking</a>
             <a routerLink="/perfil"       (click)="mobileOpen.set(false)" class="mobile-link">👤 Mi Perfil</a>
             <a routerLink="/reglas"       (click)="mobileOpen.set(false)" class="mobile-link">📋 Reglas</a>
+            <a routerLink="/pronosticos"  (click)="mobileOpen.set(false)" class="mobile-link">👀 Pronósticos</a>
             <a routerLink="/instalar"     (click)="mobileOpen.set(false)" class="mobile-link">📲 Instalar app</a>
             <a *ngIf="isAdmin()" routerLink="/admin" (click)="mobileOpen.set(false)"
                class="mobile-link" style="color:#C9A843">⚙️ Admin</a>

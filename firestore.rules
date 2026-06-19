@@ -9,6 +9,12 @@ service cloud.firestore {
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
 
+    // Un partido ya "arrancó" (las apuestas están cerradas) → sus pronósticos son públicos
+    function matchStarted(matchId) {
+      let m = get(/databases/$(database)/documents/matches/$(matchId)).data;
+      return m.status == 'IN_PLAY' || m.status == 'PAUSED' || m.status == 'FINISHED';
+    }
+
     match /users/{userId} {
       allow read:   if isAuth();
       allow create: if isOwner(userId);
@@ -23,7 +29,13 @@ service cloud.firestore {
 
     match /predictions/{predId} {
       // resource == null cubre el caso de documento inexistente (primera apuesta del usuario en ese partido)
-      allow read: if isAuth() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
+      // Las predicciones ajenas solo se pueden leer cuando el partido ya arrancó (apuestas cerradas)
+      allow read: if isAuth() && (
+        resource == null ||
+        resource.data.userId == request.auth.uid ||
+        isAdmin() ||
+        matchStarted(resource.data.matchId)
+      );
 
       allow create: if isAuth()
         && request.resource.data.userId == request.auth.uid
