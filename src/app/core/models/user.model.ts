@@ -4,7 +4,9 @@ export interface UserProfile {
   email:          string;
   photoURL:       string | null;
   country:        string;
-  totalPoints:    number;
+  totalPoints:    number;   // general (grupos + eliminatorias)
+  groupPoints:    number;   // solo fase de grupos
+  knockoutPoints: number;   // solo eliminatorias (16vos en adelante)
   exactScores:    number;
   correctWinners: number;
   rank:           number;

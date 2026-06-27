@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { MatchDoc, MatchStatus, MatchStage, Team } from '../models';
+import { MatchDoc, MatchStatus, MatchStage, Team, normalizeStage } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class FootballApiService {
@@ -48,7 +48,7 @@ export class FootballApiService {
       id:       m.id,
       utcDate:  m.utcDate,
       status:   m.status as MatchStatus,
-      stage:    m.stage as MatchStage,
+      stage:    normalizeStage(m.stage),
       group:    m.group ?? null,
       matchday: m.matchday ?? 0,
       homeTeam: team(m.homeTeam),

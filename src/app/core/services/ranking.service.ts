@@ -27,6 +27,8 @@ export class RankingService {
         photoURL:       data['photoURL']       ?? null,
         country:        data['country']        ?? '',
         totalPoints:    data['totalPoints']    ?? 0,
+        groupPoints:    data['groupPoints']    ?? 0,
+        knockoutPoints: data['knockoutPoints'] ?? 0,
         exactScores:    data['exactScores']    ?? 0,
         correctWinners: data['correctWinners'] ?? 0,
         predictions:    data['predictions']    ?? 0,

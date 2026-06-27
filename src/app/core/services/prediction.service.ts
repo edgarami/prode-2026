@@ -3,7 +3,7 @@ import {
   Firestore, collection, query, where, getDocs,
   doc, setDoc, updateDoc, getDoc,
 } from '@angular/fire/firestore';
-import { Prediction, PredictionDoc, calculatePoints, Match } from '../models';
+import { Prediction, PredictionDoc, calculatePoints, Match, stagePhase } from '../models';
 import { MatchService } from './match.service';
 import { UserService }  from './user.service';
 
@@ -67,11 +67,20 @@ export class PredictionService {
   }
 
   async recalculateUserTotals(userId: string): Promise<void> {
-    const preds      = (await this.getUserPredictions(userId)).filter(p => p.calculated);
-    const totalPoints    = preds.reduce((s, p) => s + p.points, 0);
-    const exactScores    = preds.filter(p => p.result === 'EXACT').length;
-    const correctWinners = preds.filter(p => p.result === 'TENDENCY' || p.result === 'GOAL_DIFF').length;
-    await this.userService.updateUserPoints(userId, totalPoints, exactScores, correctWinners);
+    const [preds, matches] = await Promise.all([
+      this.getUserPredictions(userId),
+      this.matchService.getAllMatches(),
+    ]);
+    const stageByMatch = new Map(matches.map(m => [m.id, m.stage]));
+    const calc = preds.filter(p => p.calculated);
+
+    const totalPoints    = calc.reduce((s, p) => s + p.points, 0);
+    const groupPoints    = calc.filter(p => stagePhase(stageByMatch.get(p.matchId) ?? 'GROUP_STAGE') === 'group').reduce((s, p) => s + p.points, 0);
+    const knockoutPoints = totalPoints - groupPoints;
+    const exactScores    = calc.filter(p => p.result === 'EXACT').length;
+    const correctWinners = calc.filter(p => p.result === 'TENDENCY' || p.result === 'GOAL_DIFF').length;
+
+    await this.userService.updateUserPoints(userId, totalPoints, exactScores, correctWinners, groupPoints, knockoutPoints);
   }
 
   private map(d: PredictionDoc): Prediction {

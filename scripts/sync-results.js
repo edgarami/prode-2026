@@ -170,6 +170,16 @@ async function main() {
     .map(r => ({ _id: r.document.name.split('/').pop(), ...fromDoc(r.document) }));
   console.log(`📋 ${allPreds.length} predicciones en total`);
 
+  // 2b. Mapa matchId → fase ('group' | 'knockout'), normalizando nombres de etapa
+  const normStage = s => s === 'LAST_32' ? 'ROUND_OF_32' : s === 'LAST_16' ? 'ROUND_OF_16' : (s ?? 'GROUP_STAGE');
+  const matchRows = await fsQuery({ from: [{ collectionId: 'matches' }] }, idToken);
+  const phaseByMatch = new Map();
+  matchRows.filter(r => r.document).forEach(r => {
+    const id    = r.document.name.split('/').pop();
+    const stage = normStage(fromDoc(r.document).stage);
+    phaseByMatch.set(String(id), stage === 'GROUP_STAGE' ? 'group' : 'knockout');
+  });
+
   const affectedUsers = new Set();
   let updatedMatches = 0, calculatedPreds = 0;
 
@@ -211,13 +221,19 @@ async function main() {
   // 5. Recalcular totales de los usuarios afectados (una vez cada uno)
   for (const uid of affectedUsers) {
     const userPreds = allPreds.filter(p => p.userId === uid && p.calculated);
+    const total    = userPreds.reduce((s, p) => s + Number(p.points ?? 0), 0);
+    const group    = userPreds
+      .filter(p => phaseByMatch.get(String(p.matchId)) !== 'knockout')
+      .reduce((s, p) => s + Number(p.points ?? 0), 0);
     await fsPatch(`/users/${uid}`, {
-      totalPoints:    sv(userPreds.reduce((s, p) => s + Number(p.points ?? 0), 0)),
+      totalPoints:    sv(total),
+      groupPoints:    sv(group),
+      knockoutPoints: sv(total - group),
       exactScores:    sv(userPreds.filter(p => p.result === 'EXACT').length),
       correctWinners: sv(userPreds.filter(p => p.result === 'TENDENCY' || p.result === 'GOAL_DIFF').length),
       updatedAt:      sv(new Date().toISOString()),
     }, idToken);
-    console.log(`   👤 Totales actualizados: ${uid.substring(0, 6)}…`);
+    console.log(`   👤 Totales actualizados: ${uid.substring(0, 6)}… (grupos:${group} elim:${total - group})`);
   }
 
   console.log(`\n✅ Listo. ${updatedMatches} partidos actualizados, ${calculatedPreds} predicciones calculadas, ${affectedUsers.size} usuarios.`);

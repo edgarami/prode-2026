@@ -104,12 +104,14 @@ export class LeagueService {
         photoURL:       data['photoURL']       ?? null,
         country:        data['country']        ?? '',
         totalPoints:    data['totalPoints']    ?? 0,
+        groupPoints:    data['groupPoints']    ?? 0,
+        knockoutPoints: data['knockoutPoints'] ?? 0,
         exactScores:    data['exactScores']    ?? 0,
         correctWinners: data['correctWinners'] ?? 0,
         predictions:    data['predictions']    ?? 0,
       };
     });
-    // Ordenar por puntos desc, asignar rank
+    // Ordenar por puntos generales desc, asignar rank (el orden por fase se hace en la UI)
     entries.sort((a, b) => b.totalPoints - a.totalPoints);
     entries.forEach((e, i) => e.rank = i + 1);
     return entries;

@@ -68,6 +68,26 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
         </div>
       </div>
 
+      <!-- Pestañas de fase -->
+      <div class="mb-6 grid grid-cols-3 gap-2">
+        <button *ngFor="let p of phases" (click)="setPhase(p.value)"
+          class="py-2.5 px-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex flex-col items-center gap-0.5"
+          [style.background]="phase()===p.value ? 'linear-gradient(135deg,#7B1F35,#3D0E1C)' : '#1E0E13'"
+          [style.color]="phase()===p.value ? '#E2C06A' : '#9ca3af'"
+          [style.border]="phase()===p.value ? '1px solid rgba(201,168,67,0.4)' : '1px solid #2A1219'">
+          <span>{{ p.icon }} {{ p.label }}</span>
+        </button>
+      </div>
+
+      <!-- Aviso fase eliminatoria -->
+      <div *ngIf="phase()==='knockout'" class="mb-6 flex items-center gap-3 px-4 py-3 rounded-xl"
+           style="background:rgba(201,168,67,0.08);border:1px solid rgba(201,168,67,0.25)">
+        <span class="text-lg">🔥</span>
+        <p class="text-xs" style="color:#C9A843">
+          Nueva fase: todos arrancan de 0 desde la Ronda de 32. La tabla de Grupos queda guardada en su pestaña.
+        </p>
+      </div>
+
       <!-- Podio Top 3 -->
       <div *ngIf="top3().length === 3" class="grid grid-cols-3 gap-3 mb-8">
         <!-- 2do -->
@@ -77,7 +97,7 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
           </div>
           <div class="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm text-white mb-2" style="background:#6b7280">2</div>
           <p class="font-bold text-white text-sm truncate w-full text-center">{{ top3()[1].displayName }}</p>
-          <p class="text-xl font-black text-white mt-1">{{ top3()[1].totalPoints | number }}</p>
+          <p class="text-xl font-black text-white mt-1">{{ pointsFor(top3()[1]) | number }}</p>
           <p class="text-xs text-gray-400">pts</p>
         </div>
         <!-- 1ro -->
@@ -87,7 +107,7 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
           </div>
           <div class="text-2xl mb-2">🏆</div>
           <p class="font-bold text-white truncate w-full text-center">{{ top3()[0].displayName }}</p>
-          <p class="text-3xl font-black mt-1" style="color:#C9A843">{{ top3()[0].totalPoints | number }}</p>
+          <p class="text-3xl font-black mt-1" style="color:#C9A843">{{ pointsFor(top3()[0]) | number }}</p>
           <p class="text-xs text-gray-400">pts</p>
         </div>
         <!-- 3ro -->
@@ -97,7 +117,7 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
           </div>
           <div class="w-8 h-8 rounded-full flex items-center justify-center font-black text-sm text-white mb-2" style="background:#92400e">3</div>
           <p class="font-bold text-white text-sm truncate w-full text-center">{{ top3()[2].displayName }}</p>
-          <p class="text-xl font-black text-white mt-1">{{ top3()[2].totalPoints | number }}</p>
+          <p class="text-xl font-black text-white mt-1">{{ pointsFor(top3()[2]) | number }}</p>
           <p class="text-xs text-gray-400">pts</p>
         </div>
       </div>
@@ -164,7 +184,7 @@ import { LoadingSpinnerComponent } from '../../shared/components/loading-spinner
                     <span class="font-semibold text-sm text-blue-400">{{ e.correctWinners }}</span>
                   </td>
                   <td class="px-4 py-3 text-right">
-                    <span class="font-black" style="color:#C9A843">{{ e.totalPoints | number }}</span>
+                    <span class="font-black" style="color:#C9A843">{{ pointsFor(e) | number }}</span>
                   </td>
                 </tr>
                 <tr *ngIf="filteredEntries().length === 0">
@@ -197,11 +217,40 @@ export class RankingComponent implements OnInit {
 
   loading          = signal(true);
   entries          = signal<RankingEntry[]>([]);
-  top3             = signal<RankingEntry[]>([]);
   myId             = signal('');
   searchQuery      = '';
   userLeagues      = signal<League[]>([]);
   selectedLeagueId = signal('');
+  phase            = signal<'general' | 'group' | 'knockout'>('general');
+
+  phases = [
+    { value: 'general'  as const, label: 'General',       icon: '🌎' },
+    { value: 'group'    as const, label: 'Grupos',        icon: '🏁' },
+    { value: 'knockout' as const, label: 'Eliminatorias', icon: '🔥' },
+  ];
+
+  setPhase(p: 'general' | 'group' | 'knockout'): void {
+    this.phase.set(p);
+    this.cdr.markForCheck();
+  }
+
+  pointsFor(e: RankingEntry): number {
+    return this.phase() === 'group'    ? e.groupPoints
+         : this.phase() === 'knockout' ? e.knockoutPoints
+         : e.totalPoints;
+  }
+
+  // Entradas ordenadas y re-rankeadas según la fase elegida
+  private rankedEntries(): RankingEntry[] {
+    return [...this.entries()]
+      .sort((a, b) => this.pointsFor(b) - this.pointsFor(a))
+      .map((e, i) => ({ ...e, rank: i + 1 }));
+  }
+
+  top3(): RankingEntry[] {
+    const r = this.rankedEntries();
+    return r.length >= 3 ? r.slice(0, 3) : [];
+  }
 
   get activeLeague(): ReturnType<typeof signal<League | null>> {
     const id = this.selectedLeagueId();
@@ -241,7 +290,6 @@ export class RankingComponent implements OnInit {
     try {
       const entries = await this.leagueService.getRankingByLeague(leagueId);
       this.entries.set(entries);
-      this.top3.set(entries.slice(0, 3).filter((_, i) => entries.length >= 3 ? true : false));
     } catch (e) {
       console.error('Error cargando ranking:', e);
     } finally {
@@ -251,9 +299,10 @@ export class RankingComponent implements OnInit {
   }
 
   filteredEntries(): RankingEntry[] {
+    const ranked = this.rankedEntries();
     const q = this.searchQuery.trim().toLowerCase();
-    if (!q) return this.entries();
-    return this.entries().filter(e => e.displayName.toLowerCase().includes(q));
+    if (!q) return ranked;
+    return ranked.filter(e => e.displayName.toLowerCase().includes(q));
   }
 
   scrollToMe(): void {

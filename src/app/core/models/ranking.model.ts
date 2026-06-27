@@ -5,6 +5,8 @@ export interface RankingEntry {
   photoURL:       string | null;
   country:        string;
   totalPoints:    number;
+  groupPoints:    number;
+  knockoutPoints: number;
   exactScores:    number;
   correctWinners: number;
   predictions:    number;

@@ -180,11 +180,14 @@ async function syncMatches(idToken) {
     crest: t.crest ?? '',
   });
 
+  // La API usa LAST_32 / LAST_16; los normalizamos a ROUND_OF_32 / ROUND_OF_16
+  const normStage = s => s === 'LAST_32' ? 'ROUND_OF_32' : s === 'LAST_16' ? 'ROUND_OF_16' : (s ?? 'GROUP_STAGE');
+
   let i = 0;
   for (const m of matches) {
     const matchDoc = {
       id: m.id, utcDate: m.utcDate,
-      status: m.status, stage: m.stage,
+      status: m.status, stage: normStage(m.stage),
       group: m.group ?? null, matchday: m.matchday ?? 0,
       homeTeam: team(m.homeTeam), awayTeam: team(m.awayTeam),
       score: {

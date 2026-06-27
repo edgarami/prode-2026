@@ -3,7 +3,7 @@ import {
   Firestore, collection, query, orderBy, getDocs,
   doc, getDoc, setDoc, updateDoc, where,
 } from '@angular/fire/firestore';
-import { Match, MatchDoc, MatchStatus, MatchStage } from '../models';
+import { Match, MatchDoc, MatchStatus, MatchStage, normalizeStage } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class MatchService {
@@ -91,6 +91,7 @@ export class MatchService {
     };
     return {
       ...d,
+      stage:       normalizeStage(d.stage),
       utcDate:     toDate(d.utcDate),
       lastUpdated: toDate(d.lastUpdated),
     };

@@ -21,7 +21,8 @@ export class UserService {
     const data = {
       uid: user.uid, displayName, email: user.email ?? '',
       photoURL: user.photoURL ?? null, country: 'Argentina',
-      totalPoints: 0, exactScores: 0, correctWinners: 0, rank: 0,
+      totalPoints: 0, groupPoints: 0, knockoutPoints: 0,
+      exactScores: 0, correctWinners: 0, rank: 0,
       role: 'user' as UserRole, createdAt: now, updatedAt: now,
       leagues: leagueIds,
     };
@@ -39,9 +40,14 @@ export class UserService {
     return snap.docs.map(d => this.mapDoc(d.id, d.data()));
   }
 
-  async updateUserPoints(uid: string, points: number, exactScores: number, correctWinners: number): Promise<void> {
+  async updateUserPoints(
+    uid: string,
+    points: number, exactScores: number, correctWinners: number,
+    groupPoints = 0, knockoutPoints = 0,
+  ): Promise<void> {
     await updateDoc(doc(this.firestore, 'users', uid), {
-      totalPoints: points, exactScores, correctWinners, updatedAt: new Date().toISOString(),
+      totalPoints: points, groupPoints, knockoutPoints,
+      exactScores, correctWinners, updatedAt: new Date().toISOString(),
     });
   }
 
@@ -49,7 +55,9 @@ export class UserService {
     return {
       uid: id, displayName: d['displayName'] ?? '', email: d['email'] ?? '',
       photoURL: d['photoURL'] ?? null, country: d['country'] ?? 'Argentina',
-      totalPoints: d['totalPoints'] ?? 0, exactScores: d['exactScores'] ?? 0,
+      totalPoints: d['totalPoints'] ?? 0,
+      groupPoints: d['groupPoints'] ?? 0, knockoutPoints: d['knockoutPoints'] ?? 0,
+      exactScores: d['exactScores'] ?? 0,
       correctWinners: d['correctWinners'] ?? 0, rank: d['rank'] ?? 0,
       role: d['role'] ?? 'user',
       leagues: d['leagues'] ?? [],
