@@ -85,11 +85,15 @@ function httpPost(url, body) {
   });
 }
 
-function firestorePatch(path, fields, idToken) {
+function firestorePatch(path, fields, idToken, fieldPaths) {
   return new Promise((resolve, reject) => {
     const body   = JSON.stringify({ fields });
+    // updateMask: si se pasan fieldPaths, solo se tocan esos campos (preserva el resto del doc)
+    const mask   = fieldPaths
+      ? '&' + fieldPaths.map(f => `updateMask.fieldPaths=${encodeURIComponent(f)}`).join('&')
+      : '';
     const url    = new URL(
-      `https://firestore.googleapis.com/v1/projects/${FB_PROJECT}/databases/(default)/documents${path}?key=${FB_API_KEY}`
+      `https://firestore.googleapis.com/v1/projects/${FB_PROJECT}/databases/(default)/documents${path}?key=${FB_API_KEY}${mask}`
     );
     const req = https.request({
       hostname: url.hostname,
@@ -183,21 +187,19 @@ async function syncMatches(idToken) {
   // La API usa LAST_32 / LAST_16; los normalizamos a ROUND_OF_32 / ROUND_OF_16
   const normStage = s => s === 'LAST_32' ? 'ROUND_OF_32' : s === 'LAST_16' ? 'ROUND_OF_16' : (s ?? 'GROUP_STAGE');
 
+  // Solo escribimos los datos de "fixture" (rivales, fecha, cruce). El marcador y el estado
+  // los maneja sync-results.js y la carga manual del admin — así NUNCA pisamos un resultado.
+  const FIXTURE_FIELDS = ['utcDate', 'stage', 'group', 'matchday', 'homeTeam', 'awayTeam', 'lastUpdated'];
+
   let i = 0;
   for (const m of matches) {
-    const matchDoc = {
-      id: m.id, utcDate: m.utcDate,
-      status: m.status, stage: normStage(m.stage),
+    const fixtureDoc = {
+      utcDate: m.utcDate, stage: normStage(m.stage),
       group: m.group ?? null, matchday: m.matchday ?? 0,
       homeTeam: team(m.homeTeam), awayTeam: team(m.awayTeam),
-      score: {
-        winner:   m.score?.winner   ?? null,
-        fullTime: { home: m.score?.fullTime?.home ?? null, away: m.score?.fullTime?.away ?? null },
-        halfTime: { home: m.score?.halfTime?.home ?? null, away: m.score?.halfTime?.away ?? null },
-      },
       lastUpdated: new Date().toISOString(),
     };
-    await firestorePatch(`/matches/${m.id}`, toFields(matchDoc), idToken);
+    await firestorePatch(`/matches/${m.id}`, toFields(fixtureDoc), idToken, FIXTURE_FIELDS);
     i++;
     if (i % 10 === 0) process.stdout.write(`   ${i}/${matches.length} partidos...\r`);
   }

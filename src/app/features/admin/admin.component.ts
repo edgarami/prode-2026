@@ -40,42 +40,35 @@ export class FinishedCountPipe implements PipeTransform {
       </div>
 
       <!-- Acciones rápidas -->
-      <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-8">
-        <div class="rounded-2xl p-5" style="background:#1E0E13;border:1px solid #2A1219">
-          <h3 class="font-bold text-white mb-2 flex items-center gap-2"><span class="text-xl">🔄</span> Sincronizar desde API</h3>
-          <p class="text-gray-400 text-xs mb-4">Importa todos los partidos desde football-data.org.</p>
-          <button (click)="syncAll()" [disabled]="syncing()"
-            class="w-full py-2.5 rounded-xl text-sm font-bold disabled:opacity-40"
-            style="background:linear-gradient(135deg,#C9A843,#A8872E);color:#0E0608">
-            {{ syncing() ? 'Sincronizando...' : 'Sincronizar partidos' }}
-          </button>
-          <p *ngIf="syncMsg()" class="mt-2 text-xs" [style.color]="syncErr() ? '#f87171' : '#C9A843'">{{ syncMsg() }}</p>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+
+        <!-- Cómo se sincroniza -->
+        <div class="lg:col-span-2 rounded-2xl p-5" style="background:#1E0E13;border:1px solid #2A1219">
+          <h3 class="font-bold text-white mb-3 flex items-center gap-2"><span class="text-xl">🔄</span> ¿Cómo se actualizan los resultados?</h3>
+          <div class="space-y-3 text-sm">
+            <div class="flex items-start gap-3">
+              <span class="text-lg shrink-0">🤖</span>
+              <p class="text-gray-300"><span class="font-bold text-white">Automático cada 6 h.</span>
+                Un proceso en GitHub trae resultados, calcula puntos y actualiza la tabla solo. No tenés que hacer nada.</p>
+            </div>
+            <div class="flex items-start gap-3">
+              <span class="text-lg shrink-0">✏️</span>
+              <p class="text-gray-300"><span class="font-bold text-white">Manual (instantáneo).</span>
+                Cuando termina un partido y querés los puntos ya, cargá el resultado abajo en la lista. Es lo más rápido y confiable.</p>
+            </div>
+            <div class="px-3 py-2 rounded-lg flex items-start gap-2" style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2)">
+              <span class="shrink-0">⚠️</span>
+              <p class="text-xs text-amber-300/90">
+                Sincronizar con la API <span class="font-semibold">desde el navegador no funciona</span> (la API la bloquea por seguridad/CORS).
+                Por eso esos botones se quitaron: la sincronización con la API corre fuera de la web, en el proceso automático.
+              </p>
+            </div>
+          </div>
         </div>
 
+        <!-- Estadísticas -->
         <div class="rounded-2xl p-5" style="background:#1E0E13;border:1px solid #2A1219">
-          <h3 class="font-bold text-white mb-2 flex items-center gap-2"><span class="text-xl">🏆</span> Actualizar resultados</h3>
-          <p class="text-gray-400 text-xs mb-4">Trae resultados finalizados y recalcula puntos.</p>
-          <button (click)="syncFinished()" [disabled]="calculating()"
-            class="w-full py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-40"
-            style="border:1px solid #2A1219">
-            {{ calculating() ? 'Procesando...' : 'Actualizar y calcular' }}
-          </button>
-          <p *ngIf="calcMsg()" class="mt-2 text-xs" [style.color]="calcErr() ? '#f87171' : '#C9A843'">{{ calcMsg() }}</p>
-        </div>
-
-        <div class="rounded-2xl p-5" style="background:#1E0E13;border:1px solid #2A1219">
-          <h3 class="font-bold text-white mb-2 flex items-center gap-2"><span class="text-xl">📊</span> Sincronizar Tabla</h3>
-          <p class="text-gray-400 text-xs mb-4">Actualiza las posiciones de los grupos desde la API.</p>
-          <button (click)="syncStandings()" [disabled]="syncingStandings()"
-            class="w-full py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-40"
-            style="border:1px solid #2A1219">
-            {{ syncingStandings() ? 'Sincronizando...' : 'Sync tabla de grupos' }}
-          </button>
-          <p *ngIf="standingsMsg()" class="mt-2 text-xs" [style.color]="standingsErr() ? '#f87171' : '#C9A843'">{{ standingsMsg() }}</p>
-        </div>
-
-        <div class="rounded-2xl p-5" style="background:#1E0E13;border:1px solid #2A1219">
-          <h3 class="font-bold text-white mb-2 flex items-center gap-2"><span class="text-xl">📈</span> Estadísticas</h3>
+          <h3 class="font-bold text-white mb-3 flex items-center gap-2"><span class="text-xl">📈</span> Estadísticas</h3>
           <div class="space-y-2">
             <div class="flex justify-between text-sm">
               <span class="text-gray-400">Total partidos</span>
