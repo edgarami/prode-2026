@@ -1,7 +1,9 @@
 import { Component, inject, signal, OnInit, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { AuthService }        from '../../core/services/auth.service';
+import { NotificationService } from '../../core/services/notification.service';
 import { UserService }        from '../../core/services/user.service';
 import { PredictionService }  from '../../core/services/prediction.service';
 import { MatchService }       from '../../core/services/match.service';
@@ -18,7 +20,7 @@ interface PredWithMatch { prediction: Prediction; match: Match | null; }
   selector:        'app-profile',
   standalone:      true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, ScoreBadgeComponent, TeamFlagComponent, LoadingSpinnerComponent, MatchDatePipe],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, ScoreBadgeComponent, TeamFlagComponent, LoadingSpinnerComponent, MatchDatePipe],
   template: `
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
@@ -84,6 +86,49 @@ interface PredWithMatch { prediction: Prediction; match: Match | null; }
               </button>
             </div>
           </form>
+        </div>
+      </div>
+
+      <!-- ═══ NOTIFICACIONES ═══ -->
+      <div *ngIf="notif.isConfigured()" class="rounded-2xl p-6 mb-8" style="background:#1E0E13;border:1px solid #2A1219">
+        <div class="flex items-start gap-4">
+          <span class="text-2xl shrink-0">🔔</span>
+          <div class="flex-1">
+            <h2 class="text-lg font-black text-white">Recordatorios de partidos</h2>
+            <p class="text-gray-400 text-sm mt-1">
+              Te avisamos al teléfono ~1 hora antes de cada partido que todavía no predijiste.
+            </p>
+
+            <!-- No soportado -->
+            <p *ngIf="!notif.isSupported()" class="mt-3 text-xs text-amber-400">
+              ⚠️ Tu navegador no soporta notificaciones. En iPhone, primero
+              <a routerLink="/instalar" class="underline" style="color:#C9A843">instalá la app</a>
+              y abrila desde la pantalla de inicio.
+            </p>
+
+            <!-- Activadas -->
+            <div *ngIf="notif.isSupported() && notif.permission()==='granted'"
+                 class="mt-3 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold"
+                 style="background:rgba(74,222,128,0.1);color:#4ade80;border:1px solid rgba(74,222,128,0.25)">
+              ✓ Notificaciones activadas
+            </div>
+
+            <!-- Bloqueadas -->
+            <p *ngIf="notif.isSupported() && notif.permission()==='denied'" class="mt-3 text-xs text-amber-400">
+              Tenés las notificaciones bloqueadas. Habilitalas desde los ajustes del navegador para este sitio.
+            </p>
+
+            <!-- Activar -->
+            <button *ngIf="notif.isSupported() && notif.permission()==='default'"
+              (click)="enableNotifs()" [disabled]="enabling()"
+              class="mt-3 py-2.5 px-5 rounded-xl text-sm font-bold disabled:opacity-40 transition-all hover:opacity-90"
+              style="background:linear-gradient(135deg,#C9A843,#A8872E);color:#0E0608">
+              {{ enabling() ? 'Activando...' : '🔔 Activar recordatorios' }}
+            </button>
+            <p *ngIf="notifMsg()" class="mt-2 text-xs" [style.color]="notifErr() ? '#f87171' : '#4ade80'">
+              {{ notifMsg() }}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -216,6 +261,7 @@ export class ProfileComponent implements OnInit {
   private leagueService     = inject(LeagueService);
   private fb                = inject(FormBuilder);
   private cdr               = inject(ChangeDetectorRef);
+  readonly notif            = inject(NotificationService);
 
   userProfile  = this.auth.userProfile;
   editMode     = signal(false);
@@ -223,6 +269,11 @@ export class ProfileComponent implements OnInit {
   loadingPreds = signal(true);
   activeFilter = signal('ALL');
   allItems     = signal<PredWithMatch[]>([]);
+
+  // Notificaciones
+  enabling = signal(false);
+  notifMsg = signal('');
+  notifErr = signal(false);
 
   // Ligas
   userLeagues      = signal<League[]>([]);
@@ -349,4 +400,21 @@ export class ProfileComponent implements OnInit {
   }
 
   trackById(_: number, i: PredWithMatch): string { return i.prediction.id; }
+
+  async enableNotifs(): Promise<void> {
+    this.enabling.set(true); this.notifMsg.set(''); this.notifErr.set(false);
+    const res = await this.notif.enable();
+    if (res.ok) {
+      this.notifMsg.set('¡Listo! Vas a recibir recordatorios antes de cada partido.');
+    } else {
+      this.notifErr.set(true);
+      this.notifMsg.set(
+        res.reason === 'denied'      ? 'No diste permiso. Habilitalo desde los ajustes del navegador.'
+      : res.reason === 'unsupported' ? 'Tu dispositivo no soporta notificaciones.'
+      :                                'No se pudo activar. Intentá de nuevo.'
+      );
+    }
+    this.enabling.set(false);
+    this.cdr.markForCheck();
+  }
 }

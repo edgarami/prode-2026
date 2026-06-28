@@ -14,6 +14,7 @@ export interface UserProfile {
   updatedAt:      Date;
   role:           UserRole;
   leagues:        string[];  // IDs de ligas a las que pertenece
+  fcmTokens?:     string[];  // tokens de dispositivos para push
 }
 
 export type UserRole = 'user' | 'admin';

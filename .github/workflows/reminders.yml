@@ -1,0 +1,29 @@
+name: 🔔 Recordatorios de predicción
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'   # cada 30 minutos
+  workflow_dispatch:          # ejecución manual desde GitHub
+
+jobs:
+  remind:
+    name: Avisar a quienes no cargaron su predicción
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📥 Checkout código
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 📦 Instalar firebase-admin
+        run: npm install firebase-admin --no-save
+
+      - name: 🔔 Enviar recordatorios
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: node scripts/send-reminders.js
