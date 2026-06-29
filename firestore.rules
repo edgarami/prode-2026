@@ -37,12 +37,15 @@ service cloud.firestore {
         matchStarted(resource.data.matchId)
       );
 
-      allow create: if isAuth()
+      // El admin puede cargar la predicción de cualquiera (backfill por problemas en la app)
+      allow create: if isAdmin() || (
+           isAuth()
         && request.resource.data.userId == request.auth.uid
         && predId == request.auth.uid + '_' + string(request.resource.data.matchId)
         && request.resource.data.predictedHome >= 0
         && request.resource.data.predictedAway >= 0
-        && request.resource.data.calculated == false;
+        && request.resource.data.calculated == false
+      );
 
       allow update: if (isAuth() && resource.data.userId == request.auth.uid && !resource.data.calculated)
                     || isAdmin();
@@ -56,11 +59,14 @@ service cloud.firestore {
     }
 
     match /leagues/{leagueId} {
-      // Cualquier usuario autenticado puede leer (para validar código de invitación)
-      allow read:   if isAuth();
-      // Solo admin puede crear/editar ligas
+      // Lectura pública: hace falta validar el código de invitación durante el registro,
+      // cuando el usuario todavía NO está autenticado. Solo expone nombre/código/conteo.
+      allow read:   if true;
+      // Solo admin puede crear ligas
       allow create: if isAdmin();
-      allow update: if isAdmin();
+      // Admin edita todo; un usuario autenticado solo puede tocar memberCount (al unirse/salir)
+      allow update: if isAdmin()
+                    || (isAuth() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['memberCount']));
       allow delete: if isAdmin();
     }
   }
