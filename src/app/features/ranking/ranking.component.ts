@@ -221,7 +221,7 @@ export class RankingComponent implements OnInit {
   searchQuery      = '';
   userLeagues      = signal<League[]>([]);
   selectedLeagueId = signal('');
-  phase            = signal<'general' | 'group' | 'knockout'>('general');
+  phase            = signal<'general' | 'group' | 'knockout'>('knockout');
 
   phases = [
     { value: 'general'  as const, label: 'General',       icon: '🌎' },
