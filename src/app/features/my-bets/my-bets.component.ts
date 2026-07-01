@@ -341,9 +341,18 @@ export class MyBetsComponent implements OnInit {
 
   filteredGroups(): StageGroup[] {
     const f = this.activeFilter();
-    return this.stageGroups()
+    let groups = this.stageGroups()
       .map(g => ({ ...g, items: g.items.filter(i => this.matchesFilter(i, f)) }))
       .filter(g => g.items.length > 0);
+
+    // En "Jugados" mostramos lo más reciente primero (última fase y último partido arriba)
+    if (f === 'PLAYED') {
+      groups = [...groups].reverse().map(g => ({
+        ...g,
+        items: [...g.items].sort((a, b) => b.match.utcDate.getTime() - a.match.utcDate.getTime()),
+      }));
+    }
+    return groups;
   }
 
   goToNextPending(): void {
