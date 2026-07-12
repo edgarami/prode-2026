@@ -15,6 +15,14 @@ service cloud.firestore {
       return m.status == 'IN_PLAY' || m.status == 'PAUSED' || m.status == 'FINISHED';
     }
 
+    // ¿Estamos ANTES del cierre de apuestas? (30 min antes del inicio, verificado por el servidor)
+    // Imposible de saltear por API directa: usa la hora del servidor y el kickoff guardado.
+    function beforeCutoff(matchId) {
+      let m = get(/databases/$(database)/documents/matches/$(matchId)).data;
+      return m.kickoffMillis is int
+          && request.time.toMillis() < m.kickoffMillis - 30 * 60 * 1000;
+    }
+
     match /users/{userId} {
       allow read:   if isAuth();
       allow create: if isOwner(userId);
@@ -45,10 +53,16 @@ service cloud.firestore {
         && request.resource.data.predictedHome >= 0
         && request.resource.data.predictedAway >= 0
         && request.resource.data.calculated == false
+        && beforeCutoff(request.resource.data.matchId)   // 🔒 no se puede apostar pasado el cierre
       );
 
-      allow update: if (isAuth() && resource.data.userId == request.auth.uid && !resource.data.calculated)
-                    || isAdmin();
+      // Editar solo antes del cierre (y si no fue calculada). El admin puede corregir siempre.
+      allow update: if isAdmin() || (
+           isAuth()
+        && resource.data.userId == request.auth.uid
+        && !resource.data.calculated
+        && beforeCutoff(resource.data.matchId)           // 🔒 no se puede editar pasado el cierre
+      );
 
       allow delete: if isAdmin();
     }

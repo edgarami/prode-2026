@@ -189,7 +189,9 @@ async function syncMatches(idToken) {
 
   // Solo escribimos los datos de "fixture" (rivales, fecha, cruce). El marcador y el estado
   // los maneja sync-results.js y la carga manual del admin — así NUNCA pisamos un resultado.
-  const FIXTURE_FIELDS = ['utcDate', 'stage', 'group', 'matchday', 'homeTeam', 'awayTeam', 'lastUpdated'];
+  // kickoffMillis: hora de inicio en epoch ms — la regla de Firestore lo usa para bloquear
+  // apuestas tardías del lado del servidor (imposible de saltear por API directa).
+  const FIXTURE_FIELDS = ['utcDate', 'stage', 'group', 'matchday', 'homeTeam', 'awayTeam', 'kickoffMillis', 'lastUpdated'];
 
   let i = 0;
   for (const m of matches) {
@@ -197,6 +199,7 @@ async function syncMatches(idToken) {
       utcDate: m.utcDate, stage: normStage(m.stage),
       group: m.group ?? null, matchday: m.matchday ?? 0,
       homeTeam: team(m.homeTeam), awayTeam: team(m.awayTeam),
+      kickoffMillis: new Date(m.utcDate).getTime(),
       lastUpdated: new Date().toISOString(),
     };
     await firestorePatch(`/matches/${m.id}`, toFields(fixtureDoc), idToken, FIXTURE_FIELDS);
